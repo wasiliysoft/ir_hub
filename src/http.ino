@@ -70,36 +70,32 @@ void SP_handleConnect() { server.send(200, "text/html", SP_connect_page); }
 void IR_handleForm() { server.send(200, "text/html", postForms); }
 
 void IR_handleSend() {
-  // LED(1);
-  if (server.method() != HTTP_POST) {
-    server.send(405, "text/plain", "Method Not Allowed");
-  } else {
-    String message = "";
-    for (uint8_t i = 0; i < server.args(); i++) {
-      message += "" + server.argName(i) + ": " + server.arg(i) + "\n";
-      yield();
-    }
-    float freq = server.arg("freq").toInt() / 1000;
-    char separator = ',';
-    uint16_t pulses = getSeparatorCount(server.arg("patt"), separator) + 1;
-    uint16_t buf[pulses];
-    parsePatt(server.arg("patt"), separator, buf);
-    irsend.sendRaw(buf, sizeof(buf) / sizeof(buf[0]), freq);
-    yield();
-    server.send(200, "text/plain", message);
-
-    Serial.print("freq ");
-    Serial.println(freq);
-    Serial.print("patt ");
-    for (int i = 0; i < pulses; i++) {
-      Serial.print(buf[i]);
-      Serial.print(",");
-      yield();
-    }
-    Serial.println();
+  LED(1);
+  String message = "";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += "" + server.argName(i) + ": " + server.arg(i) + "\n";
     yield();
   }
+  float freq = server.arg("freq").toInt() / 1000;
+  char separator = ',';
+  uint16_t pulses = getSeparatorCount(server.arg("patt"), separator) + 1;
+  uint16_t buf[pulses];
+  parsePatt(server.arg("patt"), separator, buf);
+  irsend.sendRaw(buf, sizeof(buf) / sizeof(buf[0]), freq);
+  yield();
+  server.send(200, "text/plain", message);
+
+  Serial.print("freq ");
+  Serial.println(freq);
+  Serial.print("patt ");
+  for (int i = 0; i < pulses; i++) {
+    Serial.print(buf[i]);
+    Serial.print(",");
+    yield();
+  }
+  Serial.println();
   LED(0);
+  yield();
 }
 
 void SP_handleSave() {
