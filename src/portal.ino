@@ -1,6 +1,8 @@
 #include "main.h"
 
 void portalStart() {
+  Serial.println();
+  Serial.println("Run captive portal");
   WiFi.softAPdisconnect();
   WiFi.disconnect();
   delay(500);
@@ -9,11 +11,12 @@ void portalStart() {
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(apIP, apIP, subnet);
   WiFi.softAP(SP_AP_NAME);
+  delay(500);
   dnsServer.start(53, "*", apIP);
+  restartHTTP();
+  restartUDP();
   SP_started = true;
   _SP_status = 0;
-  Serial.println();
-  Serial.println("Run captive portal");
   yield();
 }
 
