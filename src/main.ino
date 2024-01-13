@@ -32,10 +32,5 @@ void loop() {
   server.handleClient();
   UDPTick();
   portalBtnTick();
-
-  if (SP_started) {
-    LED(1);
-  } else {
-    LED(0);
-  }
+  LED(SP_started);
 }
