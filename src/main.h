@@ -12,7 +12,7 @@
 
 // ------------------- ПАРАМЕТРЫ --------------------
 #define HTTP_PORT 80
-#define UDP_PORT 8888
+#define UDP_PORT 55531
 #define LED_PIN 2
 #define IR_PIN 5
 #define BTN_PIN 0
