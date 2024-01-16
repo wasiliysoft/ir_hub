@@ -14,7 +14,7 @@ void UDPTick() {
     packetBuffer[n] = 0;
     yield();
     if (String(packetBuffer) == "IRHUB_ECHO") {
-      sendUDP(String(ESP.getChipId(), HEX).c_str(), udpServer.remoteIP(), udpServer.remotePort());
+      sendUDP(String(WiFi.macAddress()).c_str(), udpServer.remoteIP(), udpServer.remotePort());
     } else {
       Serial.println("Contents:");
       Serial.println(packetBuffer);
