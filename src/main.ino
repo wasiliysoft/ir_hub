@@ -13,6 +13,7 @@ void setup(void) {
   LED(1);
   delay(2000);  // ждём старта есп
   Serial.begin(115200);
+  Serial.println();
 
   EE_startup();
   irsend.begin();

@@ -31,7 +31,7 @@
 struct WiFiCfg {
   char SSID[32] = "";
   char pass[32] = "";
-  uint8_t mode = WIFI_AP;  // (1 WIFI_STA, 2 WIFI_AP)
+  uint8_t mode = WIFI_STA;  // (1 WIFI_STA, 2 WIFI_AP)
 };
 
 // ------------------- ФУНКЦИИ --------------------

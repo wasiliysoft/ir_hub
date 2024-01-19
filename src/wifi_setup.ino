@@ -24,7 +24,8 @@ bool setupAP() {
 bool setupLocal() {
   if (cfg.SSID[0] == NULL && cfg.pass[0] == NULL) {
     Serial.println("WiFi not configured");
-    return false;
+    portalStart();
+    return true;
   } else {
     WiFi.softAPdisconnect();
     WiFi.disconnect();

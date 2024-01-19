@@ -6,10 +6,8 @@ void EE_startup() {
   EEPROM.begin(1000);  // старт епром
   delay(100);
   if (EEPROM.read(0) != EE_KEY) {
-    EEPROM.write(0, EE_KEY);
-    EEPROM.put(1, cfg);
-    EEPROM.commit();
-    Serial.println("First start");
+    Serial.println("First start, skip reading eeprom");
+    return;
   }
   EEPROM.get(1, cfg);
   yield();
@@ -29,6 +27,9 @@ void EE_startup() {
 
 void EE_save() {
   Serial.println("save cfg");
+  if (EEPROM.read(0) != EE_KEY) {
+    EEPROM.write(0, EE_KEY);
+  }
   EEPROM.put(1, cfg);
   EEPROM.commit();
   yield();
