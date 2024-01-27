@@ -4,6 +4,9 @@
 
 ## Схема
 ![WeMos D1 mini](scheme/wemos_d1_transmitter_only.png)
+![WeMos D1 mini](scheme/wemos_d1_transmitter_only_1.jpg)
+![WeMos D1 mini](scheme/wemos_d1_transmitter_only_2.jpg)
+![WeMos D1 mini](scheme/wemos_d1_transmitter_only_3.jpg)
 
 ## Ссылки
 
