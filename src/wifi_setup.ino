@@ -22,7 +22,7 @@ bool setupAP() {
   }
 
   Serial.println("Setting AP Mode");
-  Serial.print("AP IP: ");
+  Serial.print("AP home page: http:// ");
   Serial.println(WiFi.softAPIP());
   return true;
 }
@@ -52,7 +52,7 @@ bool setupLocal() {
     }
     Serial.println();
     if (WiFi.status() == WL_CONNECTED) {
-      Serial.print("Connected, Local IP: ");
+      Serial.print("Connected, home page: http://");
       Serial.println(WiFi.localIP());
       return true;
     } else {
