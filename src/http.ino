@@ -59,7 +59,7 @@ const char SP_connect_page[] PROGMEM = R"rawliteral(
             <hr>
             <button>SAVE</button>
         </form>
-        <button onclick="window.location.href='/sp/exit';">EXIT</button>
+        <button onclick="window.location.href='/reboot';">REBOOT</button>
     </center>
     <script>
         scanWiFi();
@@ -113,7 +113,7 @@ void restartHTTP() {
   server.on("/sendIr", HTTP_POST, IR_handleSend);
   server.on("/sp/save", HTTP_POST, SP_handleSave);
   server.on("/sp/scan_networks", SP_handleScan);
-  server.on("/sp/exit", SP_handleExit);
+  server.on("/reboot", handleReboot);
   server.on("/", handleRoot);
   server.onNotFound(handleNotFound);
   server.begin();
@@ -126,8 +126,6 @@ void handleNotFound() {
   Serial.println("handleNotFound");
   handleRoot();
 }
-
-void SP_handleConnect() { server.send(200, "text/html", SP_connect_page); }
 
 void IR_handleForm() { server.send(200, "text/html", postForms); }
 
@@ -160,22 +158,7 @@ void IR_handleSend() {
   yield();
 }
 
-void SP_handleSave() {
-  if (server.arg("mode") == "ap") {
-    portalCfg.mode = WIFI_AP;
-  } else {
-    portalCfg.mode = WIFI_STA;
-  }
-  strcpy(portalCfg.SSID, server.arg("ssid").c_str());
-  strcpy(portalCfg.pass, server.arg("pass").c_str());
-  _SP_status = 1;
-  server.send(200, "text/html", "ok");
-}
-
-void SP_handleExit() {
-  _SP_status = 4;
-  handleRoot();
-}
+void SP_handleConnect() { server.send(200, "text/html", SP_connect_page); }
 
 void SP_handleScan() {
   Serial.println("scan begin");
@@ -191,8 +174,30 @@ void SP_handleScan() {
     result += WiFi.SSID(i) + "\n";
     yield();
   }
-  server.send(200, "text/html", result);
   Serial.println("scan complete");
+  server.send(200, "text/html", result);
+}
+
+void SP_handleSave() {
+  if (server.arg("mode") == "ap") {
+    cfg.mode = WIFI_AP;
+  } else {
+    cfg.mode = WIFI_STA;
+  }
+
+  strcpy(cfg.SSID, server.arg("ssid").c_str());
+  strcpy(cfg.pass, server.arg("pass").c_str());
+  EE_save();
+
+  yield();
+  server.send(200, "text/html", "ok");
+  delay(1000);
+  ESP.reset();
+}
+
+void handleReboot() {
+  server.send(200, "text/html", "ok");
+  ESP.reset();
 }
 
 void parsePatt(const String& data, const char separator, uint16_t* buf) {

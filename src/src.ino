@@ -31,5 +31,6 @@ void loop() {
   server.handleClient();
   UDPTick();
   portalBtnTick();
+  portalTick();
   LED(SP_started);
 }

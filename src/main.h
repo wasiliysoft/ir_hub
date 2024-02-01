@@ -17,15 +17,8 @@
 #define IR_PIN 5
 #define BTN_PIN 0
 
-#define SP_AP_NAME "IrHUB"        // название точки
-#define SP_AP_IP 192, 168, 1, 1   // IP точки
-#define SP_PORTAL_TIMEOUT 300000  // 5 минут
-
-// ------------------- КОДЫ --------------------
-#define SP_ERROR 0
-#define SP_SUBMIT 1
-#define SP_EXIT 4
-#define SP_TIMEOUT 5
+#define SP_AP_NAME "IrHUB"       // название точки
+#define SP_AP_IP 192, 168, 1, 1  // IP точки
 
 // ------------------- СТРУКТУРЫ --------------------
 struct WiFiCfg {
@@ -47,22 +40,17 @@ void EE_startup();
 void EE_save();
 
 void portalStart();
-/* сработает однократно при действии, точка будет автоматически выключена */
-bool portalTick();
-/* Если нажата кнопка то стартуем портал */
+void portalTick();
 void portalBtnTick();
-byte portalStatus();
 
 // ------------------- ГЛОБАЬНЫЕ ПЕРЕМЕННЫЕ --------------------
 WiFiCfg cfg;
-WiFiCfg portalCfg;
 IRsend irsend(IR_PIN);
 ESP8266WebServer server(HTTP_PORT);
 DNSServer dnsServer;
 WiFiUDP udpServer;
 char packetBuffer[UDP_TX_PACKET_MAX_SIZE + 1];
 
-byte _SP_status = 0;
 bool SP_started = false;
 
 // ------------------- МАКРО --------------------
