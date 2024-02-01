@@ -161,15 +161,17 @@ void IR_handleSend() {
 void SP_handleConnect() { server.send(200, "text/html", SP_connect_page); }
 
 void SP_handleScan() {
-  Serial.println("scan begin");
+  Serial.println("Scan WiFi started");
+  yield();
   int numberOfNetworks = WiFi.scanNetworks(/*async=*/false, /*hidden=*/false);
   String result = "";
   for (int i = 0; i < numberOfNetworks; i++) {
-    Serial.print("Network name: ");
-    Serial.println(WiFi.SSID(i));
-    Serial.print("Signal strength: ");
+    Serial.println("----");
+    Serial.print(WiFi.SSID(i));
+    Serial.print(" | RSSI: ");
+    yield();
     Serial.println(WiFi.RSSI(i));
-    Serial.println("-----------------------");
+    Serial.println("----");
     yield();
     result += WiFi.SSID(i) + "\n";
     yield();
@@ -190,13 +192,14 @@ void SP_handleSave() {
   EE_save();
 
   yield();
-  server.send(200, "text/html", "ok");
+  server.send(200, "text/html", "ok, reboot...");
   delay(1000);
   ESP.reset();
 }
 
 void handleReboot() {
-  server.send(200, "text/html", "ok");
+  server.send(200, "text/html", "ok, reboot...");
+  delay(1000);
   ESP.reset();
 }
 

@@ -11,8 +11,8 @@ void setup(void) {
   pinMode(LED_PIN, OUTPUT);
   pinMode(BTN_PIN, INPUT_PULLUP);
   LED(1);
-  delay(2000);  // ждём старта есп
   Serial.begin(115200);
+  delay(2000);  // ждём старта есп
   Serial.println();
 
   EE_startup();

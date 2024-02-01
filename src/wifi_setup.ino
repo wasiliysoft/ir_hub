@@ -22,7 +22,7 @@ bool setupAP() {
   }
 
   Serial.println("Setting AP Mode");
-  Serial.print("AP home page: http:// ");
+  Serial.print("AP home page: http://");
   Serial.println(WiFi.softAPIP());
   return true;
 }
