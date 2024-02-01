@@ -17,52 +17,114 @@ const String postForms =
 const char SP_connect_page[] PROGMEM = R"rawliteral(
 <!DOCTYPE HTML>
 <html>
+
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- <base href="http://192.168.0.176/" /> TODO Remove in prod -->
+    <style type="text/css">
+        input {
+            padding: 1ex;
+            margin: 1ex;
+        }
+
+        input[type="text"] {
+            width: 80%;
+        }
+
+        button {
+            width: 80%;
+            padding: 1ex;
+            margin: 1ex;
+            /* height: 6ex; */
+        }
+    </style>
 </head>
+
 <body>
-<style type="text/css">
-input {
-padding: 1ex;
-margin: 1ex;
-}
-input[type="text"] {
-width: 80%;
-}
-input[type="submit"] {
-width: 80%;
-/* height: 6ex; */
-}
-</style>
-<center>
-<h3>WiFi settings</h3>
-<form action="/save" method="POST">
-<input type="radio" id="r_client" name="mode" value="client" checked />
-<label for="r_client">Client</label><br>
-<input type="radio" id="r_ap" name="mode" value="ap" />
-<label for="r_ap">Access Point</label><br><br>
-<input type="text" name="ssid" placeholder="SSID"><br>
-<input type="text" name="pass" placeholder="Pass"><br>
-<input type="submit" value="SAVE">
-</form>
-<form action="/exit" method="POST">
-<input type="submit" value="EXIT">
-</form>
-</center>
+    <center>
+        <h3>WiFi Config</h3>
+        <hr>
+        <button value="SCAN WIFI" onclick="window.location.reload();">SCAN WIFI</button>
+        <hr>
+        <div id="found_networks">
+        </div>
+        <hr>
+        <form action="/sp/save" method="POST">
+            <input id="ssid" type="text" name="ssid" placeholder="SSID"><br>
+            <input type="text" name="pass" placeholder="password"><br>
+            <input type="radio" id="r_client" name="mode" value="client" checked />
+            <label for="r_client">Client</label>&nbsp;&nbsp;&nbsp;&nbsp;
+            <input type="radio" id="r_ap" name="mode" value="ap" />
+            <label for="r_ap">Access Point</label>
+            <hr>
+            <button>SAVE</button>
+        </form>
+        <button onclick="window.location.href='/sp/exit';">EXIT</button>
+    </center>
+    <script>
+        scanWiFi();
+        function scanWiFi() {
+            // let scanResult = "WasiliySoft\nQBR-2041WW_1698\nTP-Link_E11A\nBk\n"; // TODO Remove in prod
+            // createFoundNetworks(scanResult); // TODO Remove in prod
+            fetch("/sp/scan_networks")
+                .then((response) => response.text())
+                .then((scanResult) => {
+                    // console.log(scanResult);
+                    createFoundNetworks(scanResult);
+                }
+                );
+        }
+
+        function createFoundNetworks(scanResult) {
+            var parent = document.getElementById('found_networks');
+            parent.innerHTML = "";
+            scanResult.split("\n").forEach(function (item) {
+                if (item != "") {
+                    console.log(item);
+                    var el = createNetworkElement(item);
+                    parent.appendChild(el);
+                }
+            });
+        }
+        function createNetworkElement(networkName) {
+            var el = document.createElement("button");
+
+            el.innerText = networkName;
+            el.onclick = function () {
+                pasteSSID(networkName);
+                // alert(networkName);
+            };
+            return el;
+        }
+
+        function pasteSSID(networkName) {
+            document.getElementById('ssid').value = networkName;
+        }
+    </script>
 </body>
+
 </html>
 )rawliteral";
 
 void restartHTTP() {
   server.stop();
-  server.on("/formIr/", IR_handleForm);
-  server.on("/sendIr/", HTTP_POST, IR_handleSend);
-  server.on("/save", HTTP_POST, SP_handleSave);
-  server.on("/exit", HTTP_POST, SP_handleExit);
-  server.on("/", SP_handleConnect);
-  server.onNotFound(SP_handleConnect);
+  server.on("/formIr", IR_handleForm);
+  server.on("/sendIr/", HTTP_POST, IR_handleSend);  // deprecated
+  server.on("/sendIr", HTTP_POST, IR_handleSend);
+  server.on("/sp/save", HTTP_POST, SP_handleSave);
+  server.on("/sp/scan_networks", SP_handleScan);
+  server.on("/sp/exit", SP_handleExit);
+  server.on("/", handleRoot);
+  server.onNotFound(handleNotFound);
   server.begin();
   Serial.printf("HTTP server started on port %d\n", HTTP_PORT);
+}
+
+void handleRoot() { SP_handleConnect(); }
+
+void handleNotFound() {
+  Serial.println("handleNotFound");
+  handleRoot();
 }
 
 void SP_handleConnect() { server.send(200, "text/html", SP_connect_page); }
@@ -107,9 +169,31 @@ void SP_handleSave() {
   strcpy(portalCfg.SSID, server.arg("ssid").c_str());
   strcpy(portalCfg.pass, server.arg("pass").c_str());
   _SP_status = 1;
+  server.send(200, "text/html", "ok");
 }
 
-void SP_handleExit() { _SP_status = 4; }
+void SP_handleExit() {
+  _SP_status = 4;
+  handleRoot();
+}
+
+void SP_handleScan() {
+  Serial.println("scan begin");
+  int numberOfNetworks = WiFi.scanNetworks(/*async=*/false, /*hidden=*/false);
+  String result = "";
+  for (int i = 0; i < numberOfNetworks; i++) {
+    Serial.print("Network name: ");
+    Serial.println(WiFi.SSID(i));
+    Serial.print("Signal strength: ");
+    Serial.println(WiFi.RSSI(i));
+    Serial.println("-----------------------");
+    yield();
+    result += WiFi.SSID(i) + "\n";
+    yield();
+  }
+  server.send(200, "text/html", result);
+  Serial.println("scan complete");
+}
 
 void parsePatt(const String& data, const char separator, uint16_t* buf) {
   yield();
