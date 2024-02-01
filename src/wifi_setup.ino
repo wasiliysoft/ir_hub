@@ -14,7 +14,13 @@ bool setupAP() {
   delay(100);
   Serial.println("Starting as AP...");
   Serial.printf("SSID %s pass %s\n", cfg.SSID, cfg.pass);
-  WiFi.softAP(cfg.SSID, cfg.pass);
+  if (cfg.pass[0] == NULL) {
+    Serial.println("no password");
+    WiFi.softAP(cfg.SSID);
+  } else {
+    WiFi.softAP(cfg.SSID, cfg.pass);
+  }
+
   Serial.println("Setting AP Mode");
   Serial.print("AP IP: ");
   Serial.println(WiFi.softAPIP());
