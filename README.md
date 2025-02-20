@@ -1,19 +1,70 @@
-# Ir HUB
+# Ir HUB: Внешний ИК-передатчик для работы с приложением IrCode Finder по WiFi
 
-Внешний ИК передатчик для работы с приложением IrCode Finder по WiFi  
-Поисковые запросы для компонентов: 
-[Wemos D1 Mini](https://aliexpress.ru/wholesale?SearchText=wemos+d1+mini) 
-[IR module](https://aliexpress.ru/wholesale?SearchText=ir+transmitter+module) 
-[IR module 2CH](https://aliexpress.ru/wholesale?SearchText=2ch+ir+transmitter+module)  
+Этот проект представляет собой реализацию внешнего ИК-передатчика на базе платы WEMOS D1 mini, который позволяет управлять устройствами через ИК-сигналы, используя приложение **IrCode Finder**. Проект также включает в себя ИК-приемник для захвата сигналов от пультов дистанционного управления.
 
-## Схема
-![WeMos D1 mini](scheme/wemos_d1_transmitter_only.png)
-![WeMos D1 mini](scheme/wemos_d1_transmitter_only_variants.png)
-![WeMos D1 mini](scheme/wemos_d1_transmitter_only_1.jpg)
-![WeMos D1 mini](scheme/wemos_d1_transmitter_only_3.jpg)
+## Компоненты
+
+- **WEMOS D1 mini** — микроконтроллер на базе ESP8266, обеспечивающий подключение к Wi-Fi и управление периферией.
+- **ИК-приемник TL1838 (VS1838B)** — используется для приема ИК-сигналов от пультов дистанционного управления.
+- **ИК-светодиод** — используется для передачи ИК-сигналов.
+
+### Поисковые запросы для компонентов:
+- [Wemos D1 Mini](https://aliexpress.ru/wholesale?SearchText=wemos+d1+mini)
+- [ИК-передатчик с 1 диодом](https://aliexpress.ru/wholesale?SearchText=ir+transmitter+module)
+- [ИК-светодиод с 2 диодами](https://aliexpress.ru/wholesale?SearchText=2ch+ir+transmitter+module)
+- [ИК-приемник TL1838 (VS1838B)](https://aliexpress.ru/wholesale?SearchText=TL1838)
+
+## Возможности
+
+### Интеграция с приложением **IrCode Finder**
+В роли WiFi-хаба для управления устройствами по ИК-каналу.
+
+### Веб-интерфейс для считывания кодов с пульта
+Пока проверена корректность считывания только кодов протокола `NEC`. Считанный сигнал при необходимости нужно дополнить ведущими `0` для получения общей длины кода в `8` символов. По мере тестирования и выпуска обновлений список протоколов будет дополняться.
+
+## Подключение ИК-приемника
+
+- **VCC** → 3.3V на WEMOS D1 mini
+- **GND** → GND на WEMOS D1 mini
+- **OUT** → D2 на WEMOS D1 mini
+
+## Схема подключения ИК-передатчика
+
+![WeMos D1 mini](scheme/wemos_d1_transmitter_only_variants.png)  
+![WeMos D1 mini](scheme/wemos_d1_transmitter_only_1.jpg)  
+![WeMos D1 mini](scheme/wemos_d1_transmitter_only_3.jpg)  
+
+## Настройка и запуск
+
+1. **Варианты загрузки прошивки**:
+   - Загрузите код из файла [ir_hub.ino](ir_hub.ino) в плату с помощью Arduino IDE или другой среды разработки.
+   - Загрузите [скомпилированную](build/esp8266.esp8266.d1_mini_clone/ir_hub.ino.bin) версию через [ESPWebTool](https://esp.huhn.me/).
+
+2. **Подключение к Wi-Fi**:
+   - После загрузки прошивки, плата попытается подключиться к сохраненной Wi-Fi сети. Если подключение не удалось, устройство создаст точку доступа с именем "AutoConnectAP". Подключитесь к этой точке доступа и настройте Wi-Fi через веб-интерфейс.
+
+3. **Веб-интерфейс**:
+   - После успешного подключения к Wi-Fi, откройте веб-браузер и перейдите по ссылке [http://irhub.local](http://irhub.local) или по IP-адресу, который будет выведен в мониторе порта. На главной странице вы увидите последний полученный ИК-код и протокол, а также кнопку для сброса и подготовки к приему нового сигнала.
+
+4. **Отправка ИК-сигналов**:
+   - Используйте `специальную версию` приложения IrCode Finder, которая размещена в разделе `Assets` [актуального релиза](https://github.com/wasiliysoft/ir_hub/releases/latest). Для подключения к хабу в настройках приложения нужно выбрать тип передатчика `WiFi (IrHUB)`.
+   - Для отправки ИК-сигналов без приложения используйте POST-запрос на `/sendIr/` с параметрами `freq` (частота в кГц) и `patt` (паттерн импульсов, разделенных запятыми).
+
+## Отладка
+
+Для отладки включите флаг `DEBUG` в коде, установив его значение в `1`. Это позволит выводить отладочную информацию в монитор порта.
+
+## Лицензия
+
+Этот проект распространяется под лицензией MIT. Вы можете свободно использовать, модифицировать и распространять код в соответствии с условиями лицензии.
+
+## Автор
+
+Проект разработан WasiliySoft. Для связи или вопросов, пожалуйста, посетите [страницу контактов](https://wasiliysoft.ru/contacts/).
 
 ## Ссылки
 
-[Справка по приложению IrCode Finder](https://wasiliysoft.ru/ircode-finder-guide/)  
-[IrCode Finder на Google Play](https://play.google.com/store/apps/details?id=ru.wasiliysoft.ircodefindernec)  
-[Контакты](https://wasiliysoft.ru/contacts/)  
+- Обычная версия IrCode Finder на [Google Play](https://play.google.com/store/apps/details?id=ru.wasiliysoft.ircodefindernec)
+- Обычная версия IrCode Finder на [RuStore](https://www.rustore.ru/catalog/app/ru.wasiliysoft.ircodefindernec)
+- Руководство по использованию приложения [на официальном сайте](https://wasiliysoft.ru/ircode-finder-guide/)
+- Группа активных пользователей в [Telegram](https://t.me/ircodefinder)
