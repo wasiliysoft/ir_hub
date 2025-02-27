@@ -80,6 +80,7 @@ void setup() {
   server.on("/", handleRoot);
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
+  server.on("/eraseWiFiCredentials", handleEraseWifiCredentials);
 
   // Запуск веб-сервера
   server.begin();
@@ -93,11 +94,10 @@ void setup() {
   udp.begin(udpPort);
   Serial.println("UDP запущен на порту " + String(udpPort));
 
-  // Инициализация ИК-приемника
-  irrecv.enableIRIn();
+  irrecv.enableIRIn();  // Инициализация ИК-приемника
+  irsend.begin();       // Инициализация ИК-передатчика
 
-  // Инициализация ИК-передатчика
-  irsend.begin();
+  digitalWrite(ledPin, HIGH);  // Выключаем светодиод
 }
 
 void loop() {
@@ -170,6 +170,7 @@ void handleRoot() {
   html += "<form action='/reset' method='POST'>";
   html += "<button type='submit'>Сбросить и приготовиться</button>";
   html += "</form>";
+  html += "<br><br><br><br><hr><a href='/eraseWiFiCredentials'>Сбросить настройки WiFi</a>";
   html += "</body></html>";
 
   server.send(200, "text/html", html);
@@ -193,6 +194,19 @@ void handleReset() {
   // Перенаправляем на главную страницу
   server.sendHeader("Location", "/");
   server.send(303);
+}
+
+void handleEraseWifiCredentials() {
+  // Перенаправляем на главную страницу
+  server.sendHeader("Location", "/");
+  server.send(303);
+
+  Serial.println("Сброс параметров подключения WiFi");
+  WiFiManager wifiManager;
+  wifiManager.resetSettings();
+  Serial.println("Перезагрузка...");
+  delay(2000);
+  ESP.reset();
 }
 
 void handleSendRaw() {
