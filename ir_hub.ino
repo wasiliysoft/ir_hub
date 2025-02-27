@@ -64,6 +64,9 @@ void setup() {
   // Инициализация ИК-приемника
   irrecv.enableIRIn();
 
+  // Инициализация ИК-передатчика
+  irsend.begin();
+
   // Инициализация WiFiManager
   WiFiManager wifiManager;
 
