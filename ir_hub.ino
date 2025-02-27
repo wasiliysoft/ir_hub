@@ -1,14 +1,14 @@
-#include <ESP8266WiFi.h>        //3.1.2
-#include <ESP8266WebServer.h>
 #include <DNSServer.h>
-#include <WiFiManager.h>        //2.0.17
-#include <WebSocketsServer.h>   //2.6.1
-#include <IRremoteESP8266.h>    //2.8.6
+#include <ESP8266WebServer.h>
+#include <ESP8266WiFi.h>  //3.1.2
+#include <ESP8266mDNS.h>
 #include <IRrecv.h>
+#include <IRremoteESP8266.h>  //2.8.6
 #include <IRsend.h>
 #include <IRutils.h>
+#include <WebSocketsServer.h>  //2.6.1
+#include <WiFiManager.h>       //2.0.17
 #include <WiFiUdp.h>
-#include <ESP8266mDNS.h>        // Добавляем поддержку mDNS
 
 // Определяем флаг DEBUG
 #define DEBUG 0  // 1 для включения отладки, 0 для отключения
@@ -54,105 +54,92 @@ const int udpPort = 55531;
 char udpBuffer[255];
 
 void setup() {
-  // Инициализация последовательного порта для отладки
   Serial.begin(115200);
-
-  // Настройка пина светодиода как выхода
   pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, HIGH);  // Включаем светодиод при старте (инвертировано)
+  digitalWrite(ledPin, LOW);  // Включаем светодиод при старте
+
+  WiFiManager wifiManager;
+  if (!wifiManager.autoConnect("AutoConnectAP")) {
+    Serial.println("Не удалось подключиться к Wi-Fi и запустить портал настройки.");
+    delay(3000);
+    // Перезагрузка устройства
+    ESP.restart();
+  }
+
+  Serial.println("Подключено к Wi-Fi");
+  Serial.println(WiFi.localIP());
+
+  // Инициализация mDNS
+  if (!MDNS.begin("irhub")) {
+    Serial.println("Ошибка настройки mDNS!");
+  } else {
+    Serial.println("mDNS запущен, имя хоста: irhub.local");
+  }
+
+  // Настройка маршрутов веб-сервера
+  server.on("/", handleRoot);
+  server.on("/reset", handleReset);
+  server.on("/sendIr/", HTTP_POST, handleSendRaw);
+
+  // Запуск веб-сервера
+  server.begin();
+  Serial.println("Веб-сервер запущен");
+
+  // Запуск WebSocket
+  webSocket.begin();
+  Serial.println("WebSocket запущен");
+
+  // Запуск UDP
+  udp.begin(udpPort);
+  Serial.println("UDP запущен на порту " + String(udpPort));
 
   // Инициализация ИК-приемника
   irrecv.enableIRIn();
 
   // Инициализация ИК-передатчика
   irsend.begin();
-
-  // Инициализация WiFiManager
-  WiFiManager wifiManager;
-
-  // Запуск портала настройки Wi-Fi
-  // Если устройство не может подключиться к сохраненной сети, оно запустит точку доступа (AP)
-  // с именем "AutoConnectAP" и перенаправит на страницу настройки.
-  if (!wifiManager.autoConnect("AutoConnectAP")) {
-    #if (DEBUG == 1)
-    Serial.println("Не удалось подключиться к Wi-Fi и запустить портал настройки.");
-    #endif
-    delay(3000);
-    // Перезагрузка устройства
-    ESP.restart();
-  }
-
-  #if (DEBUG == 1)
-  Serial.println("Подключено к Wi-Fi");
-  Serial.println(WiFi.localIP());
-  #endif
-
-  // Инициализация mDNS с именем хоста "irhub.local"
-  if (!MDNS.begin("irhub")) {
-    #if (DEBUG == 1)
-    Serial.println("Ошибка настройки mDNS!");
-    #endif
-  } else {
-    #if (DEBUG == 1)
-    Serial.println("mDNS запущен, имя хоста: irhub.local");
-    #endif
-  }
-
-  // Настройка маршрутов веб-сервера
-  server.on("/", handleRoot);                       // Главная страница
-  server.on("/reset", handleReset);                 // Обработка кнопки "Сброс"
-  server.on("/sendIr/", HTTP_POST, handleSendRaw);  // отправка RAW
-
-  // Запуск веб-сервера
-  server.begin();
-  #if (DEBUG == 1)
-  Serial.println("Веб-сервер запущен");
-  #endif
-
-  // Запуск WebSocket
-  webSocket.begin();
-  webSocket.onEvent(webSocketEvent);
-  #if (DEBUG == 1)
-  Serial.println("WebSocket запущен");
-  #endif
-
-  // Запуск UDP
-  udp.begin(udpPort);
-  #if (DEBUG == 1)
-  Serial.println("UDP запущен на порту " + String(udpPort));
-  #endif
 }
 
 void loop() {
   // Обработка запросов веб-сервера
   server.handleClient();
+  yield();
 
   // Обработка событий WebSocket
   webSocket.loop();
+  yield();
 
   // Обработка входящих UDP-пакетов
   handleUDP();
+  yield();
 
   // Обновление mDNS
   MDNS.update();
+  yield();
 
+  // Обработка ИК приемника
+  doIrReceive();
+  yield();
+}
+
+void doIrReceive() {
   // Если включен режим ожидания ИК-сигнала
   if (isWaitingForIR && irrecv.decode(&results)) {
     // Сохраняем полученный код и протокол
     lastIRCode = uint64ToString(results.value, HEX);
     lastIRProtocol = typeToString(results.decode_type);
-    #if (DEBUG == 1)
+#if (DEBUG == 1)
     Serial.println("Получен ИК-код: " + lastIRCode + ", Протокол: " + lastIRProtocol);
-    #endif
+#endif
+
+    // Приостанавливаем приемник
+    irrecv.pause();
 
     // Отключаем режим ожидания
     isWaitingForIR = false;
 
-    // Включаем светодиод (инвертировано)
+    // Выключаем светодиод (инвертировано)
     digitalWrite(ledPin, HIGH);
-
-    // Приостанавливаем приемник
-    irrecv.pause();
 
     // Отправляем данные через WebSocket
     String jsonData = "{\"code\":\"" + lastIRCode + "\",\"protocol\":\"" + lastIRProtocol + "\"}";
@@ -169,7 +156,8 @@ void handleRoot() {
   html += "<meta charset='UTF-8'>";  // Добавляем кодировку UTF-8
   html += "<title>ИК-приемник</title>";
   html += "<script>";
-  html += "var socket = new WebSocket('ws://' + window.location.hostname + ':81/');";
+  html += "var socket = new WebSocket('ws://' + window.location.hostname + "
+          "':81/');";
   html += "socket.onmessage = function(event) {";
   html += "  var data = JSON.parse(event.data);";
   html += "  document.getElementById('ir-code').innerText = data.code;";
@@ -196,7 +184,7 @@ void handleReset() {
   // Включаем режим ожидания ИК-сигнала
   isWaitingForIR = true;
 
-  // Выключаем светодиод (инвертировано)
+  // Включаем светодиод (инвертировано)
   digitalWrite(ledPin, LOW);
 
   // Возобновляем работу приемника
@@ -237,39 +225,23 @@ void handleSendRaw() {
   yield();
   server.send(200, "text/plain", "success");
   digitalWrite(ledPin, HIGH);
-  yield();
-}
-
-// Обработка событий WebSocket
-void webSocketEvent(uint8_t num, WStype_t type, uint8_t* payload, size_t length) {
-  switch (type) {
-    case WStype_DISCONNECTED:
-      #if (DEBUG == 1)
-      Serial.printf("[%u] Отключен\n", num);
-      #endif
-      break;
-    case WStype_CONNECTED:
-      #if (DEBUG == 1)
-      Serial.printf("[%u] Подключен\n", num);
-      #endif
-      break;
-  }
 }
 
 // Функция для отправки UDP Broadcast
 void sendUDPBroadcast(String message) {
   // Устанавливаем широковещательный адрес
   IPAddress broadcastIP = WiFi.localIP();
-  broadcastIP[3] = 255;  // Последний октет адреса устанавливаем в 255 для широковещательной рассылки
+  broadcastIP[3] = 255;  // Последний октет адреса устанавливаем в 255 для
+                         // широковещательной рассылки
 
   // Отправляем сообщение
   udp.beginPacket(broadcastIP, udpPort);
   udp.write(message.c_str(), message.length());
   udp.endPacket();
 
-  #if (DEBUG == 1)
+#if (DEBUG == 1)
   Serial.println("Отправлено UDP Broadcast: " + message);
-  #endif
+#endif
 }
 
 // Функция для обработки входящих UDP-пакетов
@@ -295,9 +267,9 @@ void handleUDP() {
       udp.write(macAddress.c_str(), macAddress.length());
       udp.endPacket();
 
-      #if (DEBUG == 1)
+#if (DEBUG == 1)
       Serial.println("Отправлен MAC-адрес: " + macAddress + " на IP: " + udp.remoteIP().toString());
-      #endif
+#endif
     }
   }
 }
