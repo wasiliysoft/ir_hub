@@ -1,3 +1,4 @@
+#include <EEPROM.h>
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>  //3.1.2
@@ -7,8 +8,12 @@
 #include <IRsend.h>
 #include <IRutils.h>
 #include <WebSocketsServer.h>  //2.6.1
-#include <WiFiManager.h>       //2.0.17
 #include <WiFiUdp.h>
+
+#define INIT_ADDR 1023  // номер ячейки для хранения клоюча первого запуска
+#define INIT_KEY 53     // ключ первого запуска. 0-254, на выбор
+
+#define SSID_DEFAULT "AutoConnectAP"
 
 // Определяем флаг DEBUG
 #define DEBUG 0  // 1 для включения отладки, 0 для отключения
@@ -31,13 +36,10 @@ IRsend irsend(irLedPin);
 // Буфер для хранения полученных данных
 decode_results results;
 
-// Создаем объект веб-сервера
+
 ESP8266WebServer server(80);
-
-// Создаем объект WebSocket
+DNSServer dnsServer;
 WebSocketsServer webSocket = WebSocketsServer(81);
-
-// Создаем объект для работы с UDP
 WiFiUDP udp;
 
 // Переменные для хранения последней полученной ИК-команды и протокола
@@ -53,21 +55,36 @@ const int udpPort = 55531;
 // Буфер для хранения входящих UDP-пакетов
 char udpBuffer[255];
 
+// Структура для хранения настроек
+struct Settings {
+  char ssid[32];
+  char password[64];
+  bool isAPMode;
+};
+
+Settings settings;
+
 void setup() {
   Serial.begin(115200);
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);  // Включаем светодиод при старте
+  delay(1000);
+  Serial.println();
+  Serial.println();
+  delay(1000);
 
-  WiFiManager wifiManager;
-  if (!wifiManager.autoConnect("AutoConnectAP")) {
-    Serial.println("Не удалось подключиться к Wi-Fi и запустить портал настройки.");
-    delay(3000);
-    // Перезагрузка устройства
-    ESP.restart();
+  // EEPROM.begin(sizeof(Settings));
+  EEPROM.begin(1023);
+
+  loadSettings();
+
+  // Запуск WiFi
+  if (settings.isAPMode) {
+    startAPMode();
+  } else {
+    startClientMode();
   }
 
-  Serial.println("Подключено к Wi-Fi");
-  Serial.println(WiFi.localIP());
 
   // Инициализация mDNS
   if (!MDNS.begin("irhub")) {
@@ -81,9 +98,11 @@ void setup() {
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
   server.on("/eraseWiFiCredentials", handleEraseWifiCredentials);
-
-  // Запуск веб-сервера
-  server.begin();
+  server.on("/config", handleConfig);
+  server.on("/save", handleSave);
+  server.on("/scan", handleScan);
+  server.onNotFound(handleNotFound);
+  server.begin();  // Запуск веб-сервера
   Serial.println("Веб-сервер запущен");
 
   // Запуск WebSocket
@@ -98,12 +117,18 @@ void setup() {
   irsend.begin();       // Инициализация ИК-передатчика
 
   digitalWrite(ledPin, HIGH);  // Выключаем светодиод
+  Serial.println("Загрузка завершена");
 }
 
 void loop() {
   // Обработка запросов веб-сервера
   server.handleClient();
   yield();
+
+  // Обработка DNS-запросов в режиме точки доступа
+  if (settings.isAPMode) {
+    dnsServer.processNextRequest();
+  }
 
   // Обработка событий WebSocket
   webSocket.loop();
@@ -153,7 +178,8 @@ void doIrReceive() {
 // Обработка главной страницы
 void handleRoot() {
   String html = "<html><head>";
-  html += "<meta charset='UTF-8'>";  // Добавляем кодировку UTF-8
+  html += "<meta charset='UTF-8'>";
+  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
   html += "<title>ИК-приемник</title>";
   html += "<script>";
   html += "var socket = new WebSocket('ws://' + window.location.hostname + "
@@ -170,7 +196,8 @@ void handleRoot() {
   html += "<form action='/reset' method='POST'>";
   html += "<button type='submit'>Сбросить и приготовиться</button>";
   html += "</form>";
-  html += "<br><br><br><br><hr><a href='/eraseWiFiCredentials'>Сбросить настройки WiFi</a>";
+  html += "<br><br><br><br><hr>";
+  html += "<a href='/config'>Настройки</a>";
   html += "</body></html>";
 
   server.send(200, "text/html", html);
@@ -196,14 +223,89 @@ void handleReset() {
   server.send(303);
 }
 
+void handleConfig() {
+  String ssidParam = server.arg("ssid");  // Получаем SSID из параметра URL
+  String html = "<html><head>";
+  html += "<meta charset='UTF-8'>";
+  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
+  html += "<title>ИК-приемник</title>";
+  html += "<script>";
+  html += "function setSSID(ssid) {";
+  html += "  document.getElementsByName('ssid')[0].value = ssid;";
+  html += "  document.getElementsByName('mode')[0].value = '0';";
+  html += "}";
+  html += "</script>";
+  html += "</head>";
+  html += "<body><h1>WiFi Settings</h1>";
+  html += "<form action='/save' method='POST'>";
+  html += "Mode: <select name='mode'>";
+  html += "<option value='0'" + String(settings.isAPMode ? "" : " selected") + ">Client</option>";
+  html += "<option value='1'" + String(settings.isAPMode ? " selected" : "") + ">Access Point</option>";
+  html += "</select><br>";
+  html += "SSID: <input type='text' name='ssid' value='" + String(settings.ssid) + "'><br>";
+  html += "Password: <input type='password' name='password' value='" + String(settings.password) + "'><br>";
+  html += "<input type='submit' value='Save'>";
+  html += "</form>";
+  html += "<hr>";
+  html += "<p><a href='/scan'>Сканировать доступные сети</a></p>";  // Ссылка для сканирования сетей
+  html += "<br><br><br><br>";
+  html += "<p><a href='/eraseWiFiCredentials'>Сбросить настройки WiFi</a></p>";
+  html += "</body></html>";
+
+  if (ssidParam.length() > 0) {
+    html += "<script>setSSID('" + ssidParam + "');</script>";  // Вызываем функцию для подстановки SSID
+  }
+
+  server.send(200, "text/html", html);
+}
+
+void handleSave() {
+  if (server.method() == HTTP_POST) {
+    settings.isAPMode = server.arg("mode").toInt() == 1;
+    strncpy(settings.ssid, server.arg("ssid").c_str(), sizeof(settings.ssid));
+    strncpy(settings.password, server.arg("password").c_str(), sizeof(settings.password));
+    saveSettings();
+    server.send(200, "text/plain", "Settings saved. Restarting...");
+    delay(1000);
+    ESP.restart();
+  }
+}
+
+void handleScan() {
+  int n = WiFi.scanNetworks();
+  String html = "<html><head>";
+  html += "<meta charset='UTF-8'>";
+  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
+  html += "<title>Scan Networks</title>";
+  html += "</head>";
+  html += "<body><h1>Available Networks</h1>";
+  html += "<ul>";
+  for (int i = 0; i < n; ++i) {
+    html += "<li><a href='/config?ssid=" + WiFi.SSID(i) + "'>" + WiFi.SSID(i) + "</a></li>";
+  }
+  html += "</ul>";
+  html += "<p><a href='/config'>назад</a></p>";
+  html += "</body></html>";
+  server.send(200, "text/html", html);
+}
+
+void handleNotFound() {
+  // Перенаправляем все неизвестные запросы на главную страницу
+  IPAddress ip = WiFi.softAPIP();
+  String ipString = String(ip[0]) + "." + String(ip[1]) + "." + String(ip[2]) + "." + String(ip[3]);
+  String url = "http://" + ipString + "/";
+  server.sendHeader("Location", url, true);
+  server.send(302, "text/plain", "");
+}
+
 void handleEraseWifiCredentials() {
   // Перенаправляем на главную страницу
   server.sendHeader("Location", "/");
   server.send(303);
 
   Serial.println("Сброс параметров подключения WiFi");
-  WiFiManager wifiManager;
-  wifiManager.resetSettings();
+  setDefaultSettings();
+  saveSettings();
   Serial.println("Перезагрузка...");
   delay(2000);
   ESP.reset();
@@ -286,4 +388,62 @@ void handleUDP() {
 #endif
     }
   }
+}
+
+void loadSettings() {
+  if (EEPROM.read(INIT_ADDR) != INIT_KEY) {  // первый запуск
+    delay(5000);
+    Serial.println("Первый запуск");
+    Serial.println("Первый запуск");
+    Serial.println("Первый запуск");
+    EEPROM.write(INIT_ADDR, INIT_KEY);  // записали ключ
+    setDefaultSettings();
+    saveSettings();
+  } else {
+    EEPROM.get(0, settings);
+  }
+}
+
+void saveSettings() {
+  EEPROM.put(0, settings);
+  EEPROM.commit();
+}
+
+void setDefaultSettings() {
+  strcpy(settings.ssid, SSID_DEFAULT);
+  strcpy(settings.password, "");
+  settings.isAPMode = true;
+}
+
+void startClientMode() {
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(settings.ssid, settings.password);
+  while (WiFi.status() != WL_CONNECTED) {
+    digitalWrite(ledPin, LOW);
+    delay(400);
+    digitalWrite(ledPin, HIGH);
+    delay(400);
+    Serial.print(".");
+    if (millis() > 10000) {
+      Serial.println("Не удается подключиться к сети, включаем точку доступа");
+      setDefaultSettings();
+      startAPMode();
+      return;
+    }
+  }
+  Serial.println("");
+  Serial.println("WiFi подключен");
+  Serial.print("IP: ");
+  Serial.println(WiFi.localIP());
+}
+
+void startAPMode() {
+  WiFi.mode(WIFI_AP);
+  WiFi.softAP(settings.ssid, settings.password);
+  Serial.println("Точка доступа запущена");
+  Serial.print("IP: ");
+  Serial.println(WiFi.softAPIP());
+  // Запуск DNS-сервера для перенаправления всех запросов на IP ESP8266
+  dnsServer.start(53, "*", WiFi.softAPIP());
+  Serial.println("DNS сервер запущен");
 }
