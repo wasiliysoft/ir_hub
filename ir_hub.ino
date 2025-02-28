@@ -178,8 +178,7 @@ void doIrReceive() {
 // Обработка главной страницы
 void handleRoot() {
   String html = "<html><head>";
-  html += "<meta charset='UTF-8'>";
-  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
+  html += getCSS();
   html += "<title>ИК-приемник</title>";
   html += "<script>";
   html += "var socket = new WebSocket('ws://' + window.location.hostname + "
@@ -194,7 +193,7 @@ void handleRoot() {
   html += "<p>Последний полученный ИК-код: <strong id='ir-code'>" + lastIRCode + "</strong></p>";
   html += "<p>Протокол: <strong id='ir-protocol'>" + lastIRProtocol + "</strong></p>";
   html += "<form action='/reset' method='POST'>";
-  html += "<button type='submit'>Сбросить и приготовиться</button>";
+  html += "<input type='submit' value='СБРОСИТЬ И ПРИГОТОВИТЬСЯ'>";
   html += "</form>";
   html += "<br><br><br><br><hr>";
   html += "<a href='/config'>Настройки</a>";
@@ -226,30 +225,41 @@ void handleReset() {
 void handleConfig() {
   String ssidParam = server.arg("ssid");  // Получаем SSID из параметра URL
   String html = "<html><head>";
-  html += "<meta charset='UTF-8'>";
-  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
+  html += getCSS();
   html += "<title>ИК-приемник</title>";
   html += "<script>";
   html += "function setSSID(ssid) {";
   html += "  document.getElementsByName('ssid')[0].value = ssid;";
   html += "  document.getElementsByName('mode')[0].value = '0';";
   html += "}";
+  html += "function togglePassword() {";
+  html += "  var passwordField = document.getElementsByName('password')[0];";
+  html += "  if (document.getElementById('togglePassword').checked) {";
+  html += "     passwordField.type = 'text';";
+  html += "  } else {";
+  html += "     passwordField.type = 'password';";
+  html += "  }";
+  html += "}";
   html += "</script>";
   html += "</head>";
-  html += "<body><h1>WiFi Settings</h1>";
+  html += "<body><h1>Настройки</h1>";
+  html += "<h3>WiFi</h3>";
   html += "<form action='/save' method='POST'>";
-  html += "Mode: <select name='mode'>";
-  html += "<option value='0'" + String(settings.isAPMode ? "" : " selected") + ">Client</option>";
-  html += "<option value='1'" + String(settings.isAPMode ? " selected" : "") + ">Access Point</option>";
+  html += "Режим работы WiFi: <select name='mode'>";
+  html += "<option value='0'" + String(settings.isAPMode ? "" : " selected") + ">Клиент</option>";
+  html += "<option value='1'" + String(settings.isAPMode ? " selected" : "") + ">Точка доступа</option>";
   html += "</select><br>";
   html += "SSID: <input type='text' name='ssid' value='" + String(settings.ssid) + "'><br>";
-  html += "Password: <input type='password' name='password' value='" + String(settings.password) + "'><br>";
-  html += "<input type='submit' value='Save'>";
+  html += "Пароль: <input type='password' name='password' value='" + String(settings.password) + "'><br>";
+  html += "<label onclick='togglePassword();'><input type='checkbox' id='togglePassword'>Показать пароль</label>";
+  html += "<br><br>";
+  html += "<input type='submit' value='СОХРАНИТЬ'>";
   html += "</form>";
   html += "<hr>";
-  html += "<p><a href='/scan'>Сканировать доступные сети</a></p>";  // Ссылка для сканирования сетей
+  html += "<p><a href='/scan'>Сканировать доступные сети</a></p>";
+  html += "<p><a href='/'>назад</a></p>";
   html += "<br><br><br><br>";
-  html += "<p><a href='/eraseWiFiCredentials'>Сбросить настройки WiFi</a></p>";
+  html += "<p><a href='/eraseWiFiCredentials' style='color: red;'>Сбросить настройки WiFi</a></p>";
   html += "</body></html>";
 
   if (ssidParam.length() > 0) {
@@ -265,7 +275,14 @@ void handleSave() {
     strncpy(settings.ssid, server.arg("ssid").c_str(), sizeof(settings.ssid));
     strncpy(settings.password, server.arg("password").c_str(), sizeof(settings.password));
     saveSettings();
-    server.send(200, "text/plain", "Settings saved. Restarting...");
+
+    String html = "<html><head>";
+    html += getCSS();
+    html += "<title>ИК-приемник</title>";
+    html += "<meta http-equiv='refresh' content='10;URL=http://irhub.local'>";
+    html += "</head>";
+    html += "<body><h1>Настройки сохранены, перезагрузка... (около 10 сек)</h1></body></html>";
+    server.send(200, "text/html", html);
     delay(1000);
     ESP.restart();
   }
@@ -274,16 +291,16 @@ void handleSave() {
 void handleScan() {
   int n = WiFi.scanNetworks();
   String html = "<html><head>";
-  html += "<meta charset='UTF-8'>";
-  html += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
-  html += "<title>Scan Networks</title>";
+  html += getCSS();
+  html += "<title>Сканирование доступных сетей</title>";
   html += "</head>";
-  html += "<body><h1>Available Networks</h1>";
+  html += "<body><h1>Доступные сети</h1>";
   html += "<ul>";
   for (int i = 0; i < n; ++i) {
     html += "<li><a href='/config?ssid=" + WiFi.SSID(i) + "'>" + WiFi.SSID(i) + "</a></li>";
   }
   html += "</ul>";
+  html += "<hr>";
   html += "<p><a href='/config'>назад</a></p>";
   html += "</body></html>";
   server.send(200, "text/html", html);
@@ -299,9 +316,14 @@ void handleNotFound() {
 }
 
 void handleEraseWifiCredentials() {
-  // Перенаправляем на главную страницу
-  server.sendHeader("Location", "/");
-  server.send(303);
+  String html = "<html><head>";
+  html += getCSS();
+  html += "<title>ИК-приемник</title>";
+  html += "</head>";
+  html += "<body><h1>Настройки сброшены, переходим в режим точки доступа ";
+  html += SSID_DEFAULT;
+  html += ", перезагрузка...</h1></body></html>";
+  server.send(200, "text/html", html);
 
   Serial.println("Сброс параметров подключения WiFi");
   setDefaultSettings();
@@ -446,4 +468,35 @@ void startAPMode() {
   // Запуск DNS-сервера для перенаправления всех запросов на IP ESP8266
   dnsServer.start(53, "*", WiFi.softAPIP());
   Serial.println("DNS сервер запущен");
+}
+
+
+String getCSS() {
+  String css = "<meta charset='UTF-8'>";
+  css += "<meta name='viewport' content='width=device-width,initial-scale=1'>";
+  css += "<style>";
+  css += "body { font-family: Arial, sans-serif; background-color: #f4f4f4; color: #333; margin: 20px; }";
+  css += "h1 { color: #444; }";
+  css += "p { font-size: 16px; }";
+  css += "form { margin-top: 20px; }";
+  css += "a { color: #06c; text-decoration: none; }";
+  css += "a:hover { text-decoration: underline; }";
+  css += "ul { list-style-type: none; padding: 0; }";
+  css += "li { margin: 10px 0; }";
+  css += "label { cursor: pointer; display: flex; align-items: center; margin: 10px 0; }";
+  css += "input[type='text'], input[type='password'], select { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 4px; }";
+  css += "input[type='checkbox'] { width: 18px; height: 18px; border: 2px solid #007bff; border-radius: 4px; outline: none; cursor: pointer; margin-right: 10px; position: relative; }";
+  css += "input[type='checkbox']:checked { background-color: #007bff; border-color: #007bff; }";
+  css += "input[type='submit'], button { background-color: #4CAF50; color: white; padding: 10px 20px; border: none; border-radius: 4px; cursor: pointer; }";
+  css += "input[type='submit']:hover, button:hover { background-color: #45a049; }";
+  // Стили для кнопки на смартфоне (по умолчанию)
+  css += "input[type='submit'], button { width: 100%; }";
+
+  // Стили для кнопки на десктопе
+  css += "@media (min-width: 768px) {";
+  css += "  input[type='submit'], button { width: auto; }";
+  css += "}";
+
+  css += "</style>";
+  return css;
 }
