@@ -10,13 +10,14 @@
 #include <WebSocketsServer.h>  //2.6.1
 #include <WiFiUdp.h>
 
-#define FIRMWARE_VER "v2.2.0 (2025.03.01)"
+#define FIRMWARE_VER "v2.3.0 (2025.03.02)"
 
 #define SSID_DEFAULT "AutoConnectAP"
 #define HOSTNAME "irhub"
-#define irLedPin D1  // Пин для ИК светодиода (D1 на Wemos D1 Mini соответствует GPIO 5)
-#define recvPin D2   // Пин, к которому подключен ИК-приемник
-#define ledPin D4    // Пин для светодиода (D4 на Wemos D1 Mini соответствует GPIO 2)
+#define irLedPin D1           // Пин для ИК светодиода (D1 на Wemos D1 Mini соответствует GPIO 5)
+#define recvPin D2            // Пин, к которому подключен ИК-приемник
+#define handleResetBtnPin D3  // Пин для кнопки "Сброс и приготовиться"
+#define ledPin D4             // Пин для светодиода (D4 на Wemos D1 Mini соответствует GPIO 2)
 
 
 #define UDP_PORT 55531  // Порт для широковещательного UDP
@@ -52,6 +53,7 @@ bool isWaitingForIR = false;  // Флаг для управления состо
 void setup() {
   Serial.begin(115200);
   pinMode(ledPin, OUTPUT);
+  pinMode(handleResetBtnPin, INPUT_PULLUP);
   digitalWrite(ledPin, LOW);  // Включаем светодиод при старте
   delay(1000);
   Serial.println();
@@ -126,6 +128,10 @@ void loop() {
   // Обработка ИК приемника
   doIrReceive();
   yield();
+
+  // Обработка кнопок
+  btnTic();
+  yield();
 }
 
 void doIrReceive() {
@@ -141,13 +147,22 @@ void doIrReceive() {
 #endif
     irrecv.pause();
     isWaitingForIR = false;
-    String jsonData = "{\"code\":\"" + lastIRCode + "\",\"protocol\":\"" + lastIRProtocol + "\",\"raw\":\"" + lastIRRaw + "\"}";
-    webSocket.broadcastTXT(jsonData);
-    sendUDPBroadcast(jsonData);
+    notifyReceivedDataSetChanged();
     digitalWrite(ledPin, HIGH);
   }
 }
 
+void btnTic() {
+  if (digitalRead(handleResetBtnPin) == LOW) {
+    handleReset();
+  }
+}
+
+void notifyReceivedDataSetChanged() {
+  String jsonData = "{\"code\":\"" + lastIRCode + "\",\"protocol\":\"" + lastIRProtocol + "\",\"raw\":\"" + lastIRRaw + "\"}";
+  webSocket.broadcastTXT(jsonData);
+  sendUDPBroadcast(jsonData);
+}
 
 // Обработка главной страницы
 void handleRoot() {
@@ -181,6 +196,7 @@ void handleRoot() {
 void handleReset() {
   // Сбрасываем последний ИК код
   lastIRProtocol = lastIRCode = lastIRRaw = "Ожидание сигнала...";
+  notifyReceivedDataSetChanged();
   isWaitingForIR = true;      // Включаем режим ожидания ИК-сигнала
   irrecv.resume();            // Возобновляем работу приемника
   digitalWrite(ledPin, LOW);  // Включаем светодиод (инвертировано)
