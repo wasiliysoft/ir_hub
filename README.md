@@ -49,8 +49,8 @@
 ![Web screen](screenshots/2.png)  
 
 ### Отправка ИК-сигналов:
-   - Используйте `специальную версию` приложения IrCode Finder, которая размещена в папке [android](/android). Для подключения к хабу в настройках приложения нужно выбрать тип передатчика `WiFi (IrHUB)`.
-   - Для отправки ИК-сигналов без приложения используйте POST-запрос на `/sendIr/` с параметрами `freq` (частота в Гц) и `patt` (паттерн импульсов, разделенных запятыми).
+   - Используйте приложения IrCode Finder, для подключения к хабу в настройках приложения нужно выбрать тип передатчика `WiFi (IrHUB)`.
+   - Для отправки ИК-сигналов без приложения используйте POST-запрос на `/sendIr/` с параметрами `freq` (частота в Гц) и `patt` (длительности импульсов, разделенных запятыми).
 
 ## Отладка
 
@@ -66,7 +66,7 @@
 
 ## Ссылки
 
-Обычная версия IrCode Finder на [Google Play](https://play.google.com/store/apps/details?id=ru.wasiliysoft.ircodefindernec)  
-Обычная версия IrCode Finder на [RuStore](https://www.rustore.ru/catalog/app/ru.wasiliysoft.ircodefindernec)  
+IrCode Finder на [Google Play](https://play.google.com/store/apps/details?id=ru.wasiliysoft.ircodefindernec)  
+IrCode Finder на [RuStore](https://www.rustore.ru/catalog/app/ru.wasiliysoft.ircodefindernec)  
 Руководство по использованию приложения [на официальном сайте](https://wasiliysoft.ru/ircode-finder-guide/)  
-Группа активных пользователей в [Telegram](https://t.me/ircodefinder)
+Группа приложения в [Telegram](https://t.me/ircodefinder)
