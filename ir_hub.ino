@@ -3,7 +3,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>  //3.1.2
 #include <ESP8266mDNS.h>
-#include <ESP8266HTTPUpdateServer.h> // 
+#include <ESP8266HTTPUpdateServer.h>  //
 #include <IRrecv.h>
 #include <IRremoteESP8266.h>  //2.8.6
 #include <IRsend.h>
@@ -85,7 +85,7 @@ void setup() {
   }
 
   // Настройка маршрутов веб-сервера
-  httpUpdater.setup(&server); // OTA url /update
+  httpUpdater.setup(&server);  // OTA url /update
   server.on("/", handleRoot);
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
@@ -116,7 +116,11 @@ void setup() {
 void loop() {
   // Обработка запросов веб-сервера
   server.handleClient();
-  yield();
+  /**
+  https://hackaday.com/2022/10/28/esp8266-web-server-saves-60-power-with-a-1-ms-delay/
+  https://hackaday.com/2022/10/28/esp8266-web-server-saves-60-power-with-a-1-ms-delay/#comment-6525688
+  **/
+  delay(1);
 
   // Обработка DNS-запросов в режиме точки доступа
   if (settings.isAPMode) {
