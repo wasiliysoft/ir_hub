@@ -3,6 +3,7 @@
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>  //3.1.2
 #include <ESP8266mDNS.h>
+#include <ESP8266HTTPUpdateServer.h> // 
 #include <IRrecv.h>
 #include <IRremoteESP8266.h>  //2.8.6
 #include <IRsend.h>
@@ -31,6 +32,7 @@
 #endif
 
 ESP8266WebServer server(80);
+ESP8266HTTPUpdateServer httpUpdater;
 DNSServer dnsServer;
 WebSocketsServer webSocket = WebSocketsServer(81);
 
@@ -83,6 +85,7 @@ void setup() {
   }
 
   // Настройка маршрутов веб-сервера
+  httpUpdater.setup(&server); // OTA url /update
   server.on("/", handleRoot);
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);

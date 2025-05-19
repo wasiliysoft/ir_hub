@@ -38,6 +38,7 @@ void handleConfig() {
   html += "</form>";
   html += "<hr>";
   html += "<p><a href='/scan'>Сканировать доступные сети</a></p>";
+  html += "<p><a href='/update'>Обновление прошивки</a></p>";
   html += "<p><a href='/'>назад</a></p>";
   html += "<br><br><br><br>";
   html += "<p><a href='/eraseWiFiCredentials' style='color: red;'>Сбросить настройки WiFi</a></p>";
