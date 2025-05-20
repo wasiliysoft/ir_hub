@@ -1,36 +1,54 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru" data-bs-theme="auto">
 
 <head>
-    <title>Сканирование доступных сетей</title>
+    <title>IrHUB: Сканирование доступных сетей</title>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width,initial-scale=1'>
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/themeswitch.js"></script>
 </head>
 
 <body>
-    <h1>Доступные сети</h1>
-    <ul id="found_network">
-        <li>Сканируем сети...</li>
-    </ul>
-    <hr>
-    <p><a href='/scan_network.html'>Сканировать доступные сети</a></p>
-    <p><a href='/config.html'>назад</a></p>
-
-
+    <div class="container p-3">
+        <div class="container hstack gap-3 mb-3">
+            <h1>Сканирование сетей Wi-Fi</h1>
+        </div>
+        <div class="card mb-5">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Доступные сети</h2>
+            </div>
+            <div class="card-body">
+                <div class="list-group" id="found-network">
+                    <p>Сканируем сети...</p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="container">
+                    <div class="row g-2">
+                        <a href='/scan_network.html' class="col col-md-4 col-12 btn btn-outline-primary ">ОБНОВИТЬ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="container hstack gap-3 mb-3">
+            <a href='/config.html' class="btn btn-outline-primary">НАЗАД</a>
+            <div class="ms-auto"></div>
+        </div>
+    </div>
     <script>
         // Обновление UI
         function updateUI(data) {
-            let ul = document.getElementById('found_network');
+            let ul = document.getElementById('found-network');
             ul.innerHTML = "";
             data.forEach(element => {
                 console.log(element);
-                let li = document.createElement('li');
                 let a = document.createElement('a');
                 a.href = "/config.html?ssid=" + element;
+                a.classList = "list-group-item list-group-item-action";
                 a.textContent = element;
-                li.append(a);
-                ul.append(li);
+                ul.append(a);
             });
         }
 

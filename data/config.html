@@ -1,38 +1,95 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru" data-bs-theme="auto">
 
 <head>
-    <title>ИК-приёмник</title>
+    <title>IrHUB: Настройки</title>
     <meta charset='UTF-8'>
     <meta name='viewport' content='width=device-width,initial-scale=1'>
-    <link rel="stylesheet" type="text/css" href="/style.css">
+    <link rel="icon" href="/favicon.ico" type="image/x-icon">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <script src="js/themeswitch.js"></script>
 </head>
 
 <body>
-    <h1>Настройки</h1>
-    <p>Версия прошивки: <strong id="fw_ver_name"></strong></p>
-    <h3>WiFi</h3>
-    <form id="config_form" method='POST'>
-        Режим работы WiFi:
-        <select name='mode' id="w_mode">
-            <option value='0'>Клиент</option>
-            <option value='1'>Точка доступа</option>
-        </select><br>
-        SSID: <input type='text' name='ssid' id="w_ssid" value=''><br>
-        Пароль: <input type='password' name='password' id="w_pass" value=''><br>
-        <label onclick='togglePassword();'>
-            <input type='checkbox' id='togglePassword'>Показать пароль
-        </label>
-    </form>
-    <br><br>
-    <button type="button" onclick="save()">СОХРАНИТЬ</button>
-    <hr>
-    <p><a href='/scan_network.html'>Сканировать доступные сети</a></p>
-    <p><a href='/update'>Обновление прошивки</a></p>
-    <p><a href='/'>назад</a></p>
-    <br><br><br><br>
-    <p><a onclick="erase();" style='color: red;'>Сбросить настройки WiFi</a></p>
+    <div class="container p-3">
+        <div class="container hstack gap-3 mb-3">
+            <h1>Настройки</h1>
+        </div>
 
+        <div class="card mb-5">
+            <div class="card-header">
+                <h2 class="h5 mb-0">Wi-Fi</h2>
+            </div>
+            <div class="card-body">
+                <form id="config_form" method='POST'>
+
+                    <div class="mb-3">
+                        <label for="w_mode" class="form-label">Режим работы WiFi</label>
+                        <select class="form-select" name='mode' id="w_mode">
+                            <option value='0'>Клиент</option>
+                            <option value='1'>Точка доступа</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="ssid" class="form-label">SSID</label>
+                        <input type="text" class="form-control" name='ssid' id="w_ssid">
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="w_pass" class="form-label">Пароль</label>
+                        <input type="password" class="form-control mb-2" name='password' id="w_pass">
+
+                        <div class="mb-3 form-check" onclick='togglePassword();'>
+                            <input type="checkbox" class="form-check-input" id="togglePassword">
+                            <label onclick='togglePassword();' class="form-check-label" for="togglePassword">Показать
+                                пароль</label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="card-footer">
+                <div class="container">
+                    <div class="row g-2">
+                        <a href='/scan_network.html' class="col col-md-4 col-12 btn btn-primary ">СКАНИРОВАТЬ ДОСТУПНЫЕ
+                            СЕТИ</a>
+                        <div class="col ms-auto"></div>
+                        <button onclick="erase();" class="col col-md-4 col-12 btn btn-outline-danger ">СБРОСИТЬ
+                            НАСТРОЙКИ Wi-Fi</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card mb-5">
+            <div class="card-header">
+                <h2 class="h5 mb-0">О плате</h2>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Версия прошивки:</label>
+                    <p class="fs-5" id="fw_ver_name"></p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="container">
+                    <div class="row g-2">
+                        <a href='/update' class="col col-md-4 col-12 btn btn-primary ">ОБНОВЛЕНИЕ ПРОШИВКИ</a>
+                        <div class="col ms-auto"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
+
+        <div class="container hstack gap-3 mb-3">
+            <a href='/' class="btn btn-outline-primary">НАЗАД</a>
+            <div class="ms-auto"></div>
+            <div class="vr"></div>
+            <div class="ms-auto"></div>
+            <button type="button" class="btn btn-success" onclick="save()">СОХРАНИТЬ</button>
+        </div>
+    </div>
     <script>
         function save() {
             const formElement = document.getElementById('config_form');
@@ -112,6 +169,7 @@
                 .catch(error => console.error('Error:', error));
         };
     </script>
+
 </body>
 
 </html>

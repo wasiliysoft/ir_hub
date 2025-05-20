@@ -1,59 +1,35 @@
 <!DOCTYPE html>
-<html>
+<!-- <html lang="ru" data-bs-theme="dark"> -->
+<html lang="ru" data-bs-theme="auto">
 
 <head>
-  <title>ИК-приёмник</title>
+  <title>IrHUB: ИК-приёмник</title>
   <meta charset='UTF-8'>
-  <meta name='viewport' content='width=device-width,initial-scale=1'>
-  <link rel="stylesheet" type="text/css" href="/style.css">
+  <meta name='viewport' content='width=device-width, initial-scale=1'>
+  <link rel="icon" href="/favicon.ico" type="image/x-icon">
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/icon.css" rel="stylesheet">
+  <script src="js/themeswitch.js"></script>
+
   <style>
-    /* Адаптивные стили таблицы истории сигналов */
-    #history-table {
-      width: 100%;
-      border-collapse: collapse;
-      margin: 20px 0 1em;
-    }
-
-    #history-table th,
-    #history-table td {
-      padding: 8px;
-      text-align: left;
-      border-bottom: 1px solid #ddd;
-      word-break: break-word;
-    }
-
-    #history-table th {
-      background-color: #a0b0a0;
-    }
-
-    #history-table tr {
-      background-color: #c0c9c0;
-    }
-
-    #history-table tr:nth-child(even) {
-      background-color: #fff;
-    }
-
-    /* Мобильная адаптация */
-    @media (max-width: 600px) {
-      #history-table thead {
+    @media (max-width: 767.98px) {
+      .table-mobile-responsive thead {
         display: none;
       }
 
-      #history-table tr {
-        display: block;
-        margin-bottom: 1em;
-        border: 1px solid #ddd;
+      .table-mobile-responsive tr {
+        margin-bottom: 50px;
       }
 
-      #history-table td {
+      .table-mobile-responsive td {
         display: block;
         text-align: right;
         padding-left: 50%;
         position: relative;
+        width: 100%;
       }
 
-      #history-table td::before {
+      .table-mobile-responsive td::before {
         content: attr(data-label);
         position: absolute;
         left: 10px;
@@ -62,189 +38,125 @@
         font-weight: bold;
         text-align: left;
       }
-
-      #history-table td button {
-        width: 100%;
-      }
     }
   </style>
 </head>
 
 <body>
-  <h1>ИК-приёмник</h1>
-  <h2>Последний полученный сигнал:</h2>
-  <p>Протокол: <strong id="ir-protocol">Ожидание сигнала...</strong></p>
-  <p>hexcode: <strong id="ir-code">Ожидание сигнала...</strong></p>
-  <p>RAW данные: <br><strong id="ir-raw">Ожидание сигнала...</strong></p>
-  <form action="/reset" method="POST">
-    <input type="submit" value="СБРОСИТЬ И ПРИГОТОВИТЬСЯ">
-  </form>
-  <br>
-  <br>
-  <hr>
-  <h2>История сигналов:</h2>
-  <div style="overflow-x: auto;">
-    <table id="history-table">
-      <thead>
-        <tr>
-          <th>Дата/Время</th>
-          <th>Протокол</th>
-          <th>Hexcode</th>
-          <th>Метка</th>
-          <th>Действия</th>
-        </tr>
-      </thead>
-      <tbody id="history-body">
-      </tbody>
-    </table>
+  <div class="container p-3">
+    <div class="container hstack gap-3 mb-3">
+      <div class="">
+        <h1>ИК-приёмник</h1>
+      </div>
+      <div class="ms-auto"></div>
+      <div class="vr"></div>
+      <a href='/config.html' class="btn btn-outline-primary">Настройки</a>
+    </div>
+
+    <!-- Карточка последнего сигнала -->
+    <div class="card mb-5">
+      <div class="card-header">
+        <h2 class="h5 mb-0">Последний полученный сигнал:</h2>
+      </div>
+      <div class="card-body">
+        <div class="mb-3">
+          <label class="form-label">Протокол:</label>
+          <p class="fs-5" id="ir-protocol">Ожидание сигнала...</p>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">Hexcode:</label>
+          <p class="fs-5" id="ir-code">Ожидание сигнала...</p>
+        </div>
+        <div class="mb-3">
+          <label class="form-label">RAW данные:</label>
+          <div class="input-group">
+            <input class="p-3 form-control " type="text" readonly placeholder="Ожидание сигнала..." id="ir-raw">
+            <button id="copy-last-raw" class="btn btn-outline-secondary" type="button">
+              <div class="d-flex align-content-center justify-content-center"><span
+                  class="material-icons me-1 ph-2">content_copy</span>
+              </div>
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="card-footer d-flex justify-content-end">
+        <button id="reset_to_ready" class="btn btn-primary col-md-4 col-12">СБРОСИТЬ И ПРИГОТОВИТЬСЯ</button>
+      </div>
+    </div>
+
+    <!-- Карточка истории сигналов -->
+    <div class="card mb-5">
+      <div class="card-header">
+        <h2 class="h5 mb-0">История сигналов:</h2>
+      </div>
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-striped table-hover mb-0 table-mobile-responsive" id="history-table">
+            <thead class="table">
+              <tr>
+                <th>Дата/Время</th>
+                <th>Протокол</th>
+                <th>Hexcode</th>
+                <th>Метка</th>
+                <th>Действия</th>
+              </tr>
+            </thead>
+            <tbody id="history-body">
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer d-flex justify-content-end">
+        <button id="clear-history" class="btn btn-danger col-md-4 col-12">ОЧИСТИТЬ ИСТОРИЮ</button>
+      </div>
+    </div>
+
+
   </div>
-  <button id="clear-history" class="bg-red">ОЧИСТИТЬ ИСТОРИЮ</button>
 
-  <br><br><br><br>
-  <hr>
-  <a href='/config.html'>Настройки</a>
-  <script>
-    // WebSocket для реального времени
-    const socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+  <script src="js/index.js"></script>
+  <script src="js/bootstrap.bundle.min.js"></script>
 
-    // Обработчик WebSocket
-    socket.onmessage = function (event) {
-      const data = JSON.parse(event.data);
-      updateUI(data);
-      addToHistory(data);
-    };
 
-    // Обновление UI
-    function updateUI(data) {
-      document.getElementById('ir-protocol').textContent = data.protocol;
-      document.getElementById('ir-code').textContent = data.code;
-      document.getElementById('ir-raw').textContent = data.raw;
-    }
+  <!-- Модальное окно подтверждения удаления -->
+  <div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Подтверждение удаления</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Вы уверены, что хотите удалить этот элемент?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Удалить</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    function copyToClipboard(text) {
-      var textArea = document.createElement("textarea");
-      textArea.style.position = 'fixed';
-      textArea.style.top = 0;
-      textArea.style.left = 0;
-      textArea.style.width = '2em';
-      textArea.style.height = '2em';
-      textArea.style.padding = 0;
-      textArea.style.border = 'none';
-      textArea.style.outline = 'none';
-      textArea.style.boxShadow = 'none';
-      textArea.style.background = 'transparent';
-      textArea.value = text;
-
-      document.body.appendChild(textArea);
-      textArea.focus();
-      textArea.select();
-
-      try {
-        var successful = document.execCommand('copy');
-        var msg = successful ? 'successful' : 'unsuccessful';
-        console.log('Copying text command was ' + msg);
-      } catch (err) {
-        console.log('Oops, unable to copy');
-      }
-
-      document.body.removeChild(textArea);
-    }
-
-    // Удаление элемента из истории
-    function deleteHistoryItem(index) {
-      if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
-        let history = JSON.parse(localStorage.getItem('irHistory')) || [];
-        history.splice(index, 1);
-        localStorage.setItem('irHistory', JSON.stringify(history));
-        renderHistory();
-      }
-    }
-
-    // Добавление записи в историю
-    function addToHistory(data) {
-      if (data.raw.toLowerCase().includes("ожидание")) return;
-      const historyItem = {
-        timestamp: new Date().toLocaleString(),
-        protocol: data.protocol,
-        code: data.code,
-        raw: data.raw,
-        label: ''
-      };
-
-      // Получаем текущую историю из localStorage
-      let history = JSON.parse(localStorage.getItem('irHistory')) || [];
-
-      // Добавляем новую запись в начало массива
-      history.unshift(historyItem);
-
-      // Ограничиваем историю (например, последние 50 записей)
-      if (history.length > 50) {
-        history = history.slice(0, 50);
-      }
-
-      // Сохраняем обновленную историю
-      localStorage.setItem('irHistory', JSON.stringify(history));
-
-      // Обновляем отображение истории
-      renderHistory();
-    }
-
-    // Обновление метки в истории
-    function updateLabel(index, label) {
-      let history = JSON.parse(localStorage.getItem('irHistory')) || [];
-      if (history[index]) {
-        history[index].label = label;
-        localStorage.setItem('irHistory', JSON.stringify(history));
-      }
-    }
-
-    // Отображение истории
-    function renderHistory() {
-      const history = JSON.parse(localStorage.getItem('irHistory')) || [];
-      const historyBody = document.getElementById('history-body');
-
-      historyBody.innerHTML = history.map((item, index) => {
-        // Для мобильных устройств добавляем data-атрибуты
-        return `
-          <tr>
-            <td data-label="Дата/Время">${item.timestamp}</td>
-            <td data-label="Протокол">${item.protocol}</td>
-            <td data-label="Hexcode">${item.code}</td>
-            <td data-label="Метка">
-              <input type="text" class="label-input" value="${item.label || ''}" 
-                     onchange="updateLabel(${index}, this.value)" 
-                     placeholder="Введите метку">
-            </td>
-            <td data-label="Действия">
-              <button onclick="copyToClipboard('${item.raw.replace(/'/g, "\\'")}')">Копировать RAW</button>
-              <button class="bg-red" onclick="deleteHistoryItem(${index})">Удалить</button>
-            </td>
-            
-          </tr>
-        `;
-      }).join('');
-    }
-
-    // Очистка истории
-    document.getElementById('clear-history').addEventListener('click', () => {
-      if (confirm('Вы уверены, что хотите очистить историю?')) {
-        localStorage.removeItem('irHistory');
-        renderHistory();
-      }
-    });
-
-    // Инициализация
-    window.onload = function () {
-      // Загружаем текущее состояние при загрузке страницы
-      fetch('/api/v1/last-received-data')
-        .then(response => response.json())
-        .then(data => {
-          updateUI(data);
-          renderHistory();
-        })
-        .catch(error => console.error('Error:', error));
-    };
-  </script>
+  <!-- Модальное окно подтверждения очистки -->
+  <div class="modal fade" id="confirmClearModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Подтверждение очистки</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          Вы уверены, что хотите очистить всю историю сигналов?
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Отмена</button>
+          <button type="button" class="btn btn-danger" id="confirmClearBtn">Очистить</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </body>
 
 </html>
