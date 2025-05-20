@@ -1,4 +1,6 @@
 #include <EEPROM.h>
+#include <LittleFS.h>
+#include <ArduinoJson.h>  //7.4.1
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
 #include <ESP8266WiFi.h>  //3.1.2
@@ -84,9 +86,13 @@ void setup() {
     Serial.println("mDNS запущен, имя хоста: " + String(HOSTNAME) + ".local");
   }
 
+  LittleFS.begin();
+  if (!LittleFS.exists("/index.html")) {
+    Serial.println("Файловая система не найдена!");
+  }
   // Настройка маршрутов веб-сервера
   httpUpdater.setup(&server);  // OTA url /update
-  server.on("/", handleRoot);
+  server.on("/api", HTTP_GET, handleAPI);
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
   server.on("/eraseWiFiCredentials", handleEraseWifiCredentials);
@@ -94,6 +100,7 @@ void setup() {
   server.on("/save", handleSave);
   server.on("/scan", handleScan);
   server.onNotFound(handleNotFound);
+  server.serveStatic("/", LittleFS, "/");
   server.begin();  // Запуск веб-сервера
   Serial.println("Веб-сервер запущен");
 
@@ -174,32 +181,21 @@ void notifyReceivedDataSetChanged() {
   webSocket.broadcastTXT(jsonData);
 }
 
-// Обработка главной страницы
+// Обработчик главной страницы (отдает статический HTML)
 void handleRoot() {
-  String html = "<html><head>";
-  html += getCSS();
-  html += "<title>ИК-приемник</title>";
-  html += "<script>";
-  html += "var socket = new WebSocket('ws://' + window.location.hostname + ':81/');";
-  html += "socket.onmessage = function(event) {";
-  html += "  var data = JSON.parse(event.data);";
-  html += "  document.getElementById('ir-code').innerText = data.code;";
-  html += "  document.getElementById('ir-protocol').innerText = data.protocol;";
-  html += "  document.getElementById('ir-raw').innerText = data.raw;";
-  html += "};";
-  html += "</script>";
-  html += "</head><body>";
-  html += "<p>Протокол: <strong id='ir-protocol'>" + lastIRProtocol + "</strong></p>";
-  html += "<p>hexcode: <strong id='ir-code'>" + lastIRCode + "</strong></p>";
-  html += "<p>RAW данные: <br><strong id='ir-raw'>" + lastIRRaw + "</strong></p>";
-  html += "<form action='/reset' method='POST'>";
-  html += "<input type='submit' value='СБРОСИТЬ И ПРИГОТОВИТЬСЯ'>";
-  html += "</form>";
-  html += "<br><br><br><br><hr>";
-  html += "<a href='/config'>Настройки</a>";
-  html += "</body></html>";
+  server.send(200, "text/html", "<html><head><meta http-equiv=\"refresh\" content=\"0; url=/index.html\"></head></html>");
+}
 
-  server.send(200, "text/html", html);
+// Обработчик для API (отдает JSON)
+void handleAPI() {
+  DynamicJsonDocument doc(1024);
+  doc["protocol"] = lastIRProtocol;
+  doc["code"] = lastIRCode;
+  doc["raw"] = lastIRRaw;
+
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
 }
 
 // Обработка кнопки "Сбросить и приготовиться"

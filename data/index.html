@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>ИК-приемник</title>
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width,initial-scale=1'>
+  <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+
+<body>
+  <h1>ИК-приемник</h1>
+
+  <h2>Последний полученный сигнал:</h2>
+  <p>Протокол: <strong id="ir-protocol">-</strong></p>
+  <p>hexcode: <strong id="ir-code">-</strong></p>
+  <p>RAW данные: <br><strong id="ir-raw">-</strong></p>
+  <form action="/reset" method="POST">
+    <input type="submit" value="СБРОСИТЬ И ПРИГОТОВИТЬСЯ">
+  </form>
+  <br><br><br><br>
+  <hr>
+  <a href='/config'>Настройки</a>
+  <script>
+    // WebSocket для реального времени
+    const socket = new WebSocket('ws://' + window.location.hostname + ':81/');
+    // Обработчик WebSocket
+    socket.onmessage = function (event) {
+      const data = JSON.parse(event.data);
+      updateUI(data);
+    };
+
+    // Обновление UI
+    function updateUI(data) {
+      document.getElementById('ir-protocol').textContent = data.protocol;
+      document.getElementById('ir-code').textContent = data.code;
+      document.getElementById('ir-raw').textContent = data.raw;
+    }
+
+    // Инициализация
+    window.onload = function () {
+      // Загружаем текущее состояние при загрузке страницы
+      fetch('/api')
+        .then(response => response.json())
+        .then(data => updateUI(data))
+        .catch(error => console.error('Error:', error));
+    };
+  </script>
+</body>
+
+</html>
