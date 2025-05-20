@@ -92,10 +92,7 @@ void handleScan() {
 
 void handleNotFound() {
   // Перенаправляем все неизвестные запросы на главную страницу
-  IPAddress ip = WiFi.softAPIP();
-  String ipString = String(ip[0]) + "." + String(ip[1]) + "." + String(ip[2]) + "." + String(ip[3]);
-  String url = "http://" + ipString + "/";
-  server.sendHeader("Location", url, true);
+  server.sendHeader("Location", "/", true);
   server.send(302, "text/plain", "");
 }
 
