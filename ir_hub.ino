@@ -93,13 +93,12 @@ void setup() {
   // Настройка маршрутов веб-сервера
   httpUpdater.setup(&server);  // OTA url /update
   server.on("/api/v1/last-received-data", HTTP_GET, handleAPI_last_received_data);
-  server.on("/reset", handleReset);
+  server.on("/api/v1/scan-network", HTTP_GET, handleAPI_scan_network);
+  server.on("/api/v1/config-read", HTTP_GET, handleAPI_config_read);
+  server.on("/api/v1/config-write", HTTP_POST, handleAPI_config_write);
+  server.on("/api/v1/config-erase", HTTP_GET, handleAPI_config_erase);
+  server.on("/reset", HTTP_GET, handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
-  server.on("/eraseWiFiCredentials", handleEraseWifiCredentials);
-  server.on("/config", handleConfig);
-  server.on("/save", handleSave);
-  server.on("/scan", handleScan);
-  server.onNotFound(handleNotFound);
   server.serveStatic("/", LittleFS, "/");
   server.begin();  // Запуск веб-сервера
   Serial.println("Веб-сервер запущен");
@@ -191,6 +190,66 @@ void handleAPI_last_received_data() {
   doc["protocol"] = lastIRProtocol;
   doc["code"] = lastIRCode;
   doc["raw"] = lastIRRaw;
+
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
+}
+
+void handleAPI_config_read() {
+  DynamicJsonDocument doc(256);
+  doc["w_ssid"] = settings.ssid;
+  doc["w_pass"] = settings.password;
+  doc["w_ap"] = settings.isAPMode;
+  doc["fw_ver_name"] = FIRMWARE_VER;
+
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
+}
+
+void handleAPI_config_write() {
+  if (server.method() == HTTP_POST) {
+    settings.isAPMode = server.arg("mode").toInt() == 1;
+    strncpy(settings.ssid, server.arg("ssid").c_str(), sizeof(settings.ssid));
+    strncpy(settings.password, server.arg("password").c_str(), sizeof(settings.password));
+    saveSettings();
+
+    DynamicJsonDocument doc(128);
+    doc["status"] = "ok";
+
+    String response;
+    serializeJson(doc, response);
+    server.send(200, "application/json", response);
+    delay(1000);
+    ESP.restart();
+  }
+}
+
+void handleAPI_config_erase() {
+  DynamicJsonDocument doc(128);
+  doc["status"] = "ok";
+
+  String response;
+  serializeJson(doc, response);
+  server.send(200, "application/json", response);
+
+  Serial.println("Сброс параметров подключения WiFi");
+  setDefaultSettings();
+  saveSettings();
+  Serial.println("Перезагрузка...");
+  delay(2000);
+  ESP.reset();
+}
+
+
+void handleAPI_scan_network() {
+  DynamicJsonDocument doc(256);
+
+  int n = WiFi.scanNetworks();
+  for (int i = 0; i < n; ++i) {
+    doc[i] = WiFi.SSID(i);
+  }
 
   String response;
   serializeJson(doc, response);

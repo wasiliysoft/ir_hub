@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Сканирование доступных сетей</title>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width,initial-scale=1'>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+
+<body>
+    <h1>Доступные сети</h1>
+    <ul id="found_network">
+        <li>Сканируем сети...</li>
+    </ul>
+    <hr>
+    <p><a href='/scan_network.html'>Сканировать доступные сети</a></p>
+    <p><a href='/config.html'>назад</a></p>
+
+
+    <script>
+        // Обновление UI
+        function updateUI(data) {
+            let ul = document.getElementById('found_network');
+            ul.innerHTML = "";
+            data.forEach(element => {
+                console.log(element);
+                let li = document.createElement('li');
+                let a = document.createElement('a');
+                a.href = "/config.html?ssid=" + element;
+                a.textContent = element;
+                li.append(a);
+                ul.append(li);
+            });
+        }
+
+        // Инициализация
+        window.onload = function () {
+            // Загружаем доступные сети
+            fetch('/api/v1/scan-network')
+                .then(response => response.json())
+                .then(data => {
+                    updateUI(data);
+                })
+                .catch(error => console.error('Error:', error));
+        };
+    </script>
+</body>
+
+</html>

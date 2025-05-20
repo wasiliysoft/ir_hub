@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>ИК-приёмник</title>
+    <meta charset='UTF-8'>
+    <meta name='viewport' content='width=device-width,initial-scale=1'>
+    <link rel="stylesheet" type="text/css" href="/style.css">
+</head>
+
+<body>
+    <h1>Настройки</h1>
+    <p>Версия прошивки: <strong id="fw_ver_name"></strong></p>
+    <h3>WiFi</h3>
+    <form id="config_form" method='POST'>
+        Режим работы WiFi:
+        <select name='mode' id="w_mode">
+            <option value='0'>Клиент</option>
+            <option value='1'>Точка доступа</option>
+        </select><br>
+        SSID: <input type='text' name='ssid' id="w_ssid" value=''><br>
+        Пароль: <input type='password' name='password' id="w_pass" value=''><br>
+        <label onclick='togglePassword();'>
+            <input type='checkbox' id='togglePassword'>Показать пароль
+        </label>
+    </form>
+    <br><br>
+    <button type="button" onclick="save()">СОХРАНИТЬ</button>
+    <hr>
+    <p><a href='/scan_network.html'>Сканировать доступные сети</a></p>
+    <p><a href='/update'>Обновление прошивки</a></p>
+    <p><a href='/'>назад</a></p>
+    <br><br><br><br>
+    <p><a onclick="erase();" style='color: red;'>Сбросить настройки WiFi</a></p>
+
+    <script>
+        function save() {
+            const formElement = document.getElementById('config_form');
+            const data = new URLSearchParams(new FormData(formElement));
+            fetch('/api/v1/config-write', {
+                method: 'post',
+                body: data,
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log(data);
+                    if (data.status == "ok") {
+                        alert("Сохранено, перезагружаемся...");
+                        window.location.href = "http://irhub.local";
+                    }
+                });
+        }
+        function erase() {
+            if (confirm('Сбросить настройки?')) {
+                fetch('/api/v1/config-erase')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        if (data.status == "ok") {
+                            alert("Настройки сброшены, переходим в режим точки доступа");
+                            window.location.href = "http://irhub.local";
+                        }
+                    });
+            }
+        }
+
+        // Обновление UI
+        function updateUI(data) {
+            document.getElementById('fw_ver_name').textContent = data.fw_ver_name;
+            // Проверяем наличие имени сети в запросе
+            let ext_ssid = get("ssid");
+            if (ext_ssid !== "") {
+                document.getElementById('w_ssid').value = ext_ssid;
+            } else {
+                document.getElementById('w_ssid').value = data.w_ssid;
+                document.getElementById('w_pass').value = data.w_pass;
+
+                if (data.w_ap == true) {
+                    document.getElementById('w_mode').value = 1;
+                } else {
+                    document.getElementById('w_mode').value = 0;
+                }
+            }
+        }
+
+        // Получить GET параметр запроса
+        function get(name) {
+            if (name = (new RegExp('[?&]' + encodeURIComponent(name) + '=([^&]*)')).exec(location.search)) {
+                return decodeURIComponent(name[1]);
+            } else {
+                return "";
+            }
+        }
+
+        function togglePassword() {
+            var passwordField = document.getElementsByName('password')[0];
+            if (document.getElementById('togglePassword').checked) {
+                passwordField.type = 'text';
+            } else {
+                passwordField.type = 'password';
+            }
+        }
+
+        // Инициализация
+        window.onload = function () {
+            // Загружаем текущие настройки
+            fetch('/api/v1/config-read')
+                .then(response => response.json())
+                .then(data => {
+                    updateUI(data);
+                })
+                .catch(error => console.error('Error:', error));
+        };
+    </script>
+</body>
+
+</html>
