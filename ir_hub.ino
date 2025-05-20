@@ -1,5 +1,5 @@
 #include <EEPROM.h>
-#include <LittleFS.h>
+#include <LittleFS.h>     // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
 #include <ArduinoJson.h>  //7.4.1
 #include <DNSServer.h>
 #include <ESP8266WebServer.h>
@@ -92,7 +92,7 @@ void setup() {
   }
   // Настройка маршрутов веб-сервера
   httpUpdater.setup(&server);  // OTA url /update
-  server.on("/api", HTTP_GET, handleAPI);
+  server.on("/api/v1/last-received-data", HTTP_GET, handleAPI_last_received_data);
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
   server.on("/eraseWiFiCredentials", handleEraseWifiCredentials);
@@ -186,9 +186,8 @@ void handleRoot() {
   server.send(200, "text/html", "<html><head><meta http-equiv=\"refresh\" content=\"0; url=/index.html\"></head></html>");
 }
 
-// Обработчик для API (отдает JSON)
-void handleAPI() {
-  DynamicJsonDocument doc(1024);
+void handleAPI_last_received_data() {
+  DynamicJsonDocument doc(2048);
   doc["protocol"] = lastIRProtocol;
   doc["code"] = lastIRCode;
   doc["raw"] = lastIRRaw;

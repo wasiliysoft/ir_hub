@@ -222,7 +222,7 @@
     // Инициализация
     window.onload = function () {
       // Загружаем текущее состояние при загрузке страницы
-      fetch('/api')
+      fetch('/api/v1/last-received-data')
         .then(response => response.json())
         .then(data => {
           updateUI(data);
