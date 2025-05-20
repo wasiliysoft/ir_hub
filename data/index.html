@@ -91,7 +91,7 @@
           <th>Протокол</th>
           <th>Hexcode</th>
           <th>Метка</th>
-          <th>RAW</th>
+          <th>Действия</th>
         </tr>
       </thead>
       <tbody id="history-body">
@@ -150,6 +150,16 @@
       document.body.removeChild(textArea);
     }
 
+    // Удаление элемента из истории
+    function deleteHistoryItem(index) {
+      if (confirm('Вы уверены, что хотите удалить этот элемент?')) {
+        let history = JSON.parse(localStorage.getItem('irHistory')) || [];
+        history.splice(index, 1);
+        localStorage.setItem('irHistory', JSON.stringify(history));
+        renderHistory();
+      }
+    }
+
     // Добавление записи в историю
     function addToHistory(data) {
       if (data.raw.toLowerCase().includes("ожидание")) return;
@@ -205,7 +215,11 @@
                      onchange="updateLabel(${index}, this.value)" 
                      placeholder="Введите метку">
             </td>
-            <td data-label="RAW"><button onclick="copyToClipboard('${item.raw.replace(/'/g, "\\'")}')">Копировать</button></td>
+            <td data-label="Действия">
+              <button onclick="copyToClipboard('${item.raw.replace(/'/g, "\\'")}')">Копировать RAW</button>
+              <button class="bg-red" onclick="deleteHistoryItem(${index})">Удалить</button>
+            </td>
+            
           </tr>
         `;
       }).join('');
