@@ -89,6 +89,10 @@ void setup() {
   LittleFS.begin();
   if (!LittleFS.exists("/index.html")) {
     Serial.println("Файловая система не найдена!");
+    server.onNotFound([]() {
+      server.sendHeader("Location", "/update");
+      server.send(302, "text/plain", "Redirecting");
+    });
   }
   // Настройка маршрутов веб-сервера
   httpUpdater.setup(&server);  // OTA url /update
