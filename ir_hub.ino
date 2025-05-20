@@ -13,7 +13,7 @@
 #include <WebSocketsServer.h>  //2.6.1
 #include <WiFiUdp.h>
 
-#define FIRMWARE_VER "v2.4.0 (2025.04.12)"
+#define FIRMWARE_VER "v2.5.0 (2025.05.20)"
 
 #define SSID_DEFAULT "AutoConnectAP"
 #define HOSTNAME "irhub"
@@ -101,7 +101,7 @@ void setup() {
   server.on("/api/v1/config-read", HTTP_GET, handleAPI_config_read);
   server.on("/api/v1/config-write", HTTP_POST, handleAPI_config_write);
   server.on("/api/v1/config-erase", HTTP_GET, handleAPI_config_erase);
-  server.on("/reset", HTTP_GET, handleReset);
+  server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
   server.serveStatic("/", LittleFS, "/");
   server.begin();  // Запуск веб-сервера
