@@ -87,15 +87,17 @@ void setup() {
   }
 
   LittleFS.begin();
-  if (!LittleFS.exists("/index.html")) {
-    Serial.println("Файловая система не найдена!");
-    server.onNotFound([]() {
-      server.sendHeader("Location", "/update");
-      server.send(302, "text/plain", "Redirecting");
-    });
-  }
   // Настройка маршрутов веб-сервера
   httpUpdater.setup(&server);  // OTA url /update
+  server.onNotFound([]() {
+    if (!LittleFS.exists("/index.html")) {
+      Serial.println("Файловая система не найдена!");
+      server.sendHeader("Location", "/update");
+    } else {
+      server.sendHeader("Location", "/");
+    }
+    server.send(302, "text/plain", "Redirecting");
+  });
   server.on("/api/v1/last-received-data", HTTP_GET, handleAPI_last_received_data);
   server.on("/api/v1/scan-network", HTTP_GET, handleAPI_scan_network);
   server.on("/api/v1/config-read", HTTP_GET, handleAPI_config_read);
