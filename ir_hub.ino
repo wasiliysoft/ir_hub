@@ -203,12 +203,20 @@ void handleAPI_last_received_data() {
 }
 
 void handleAPI_config_read() {
-  DynamicJsonDocument doc(256);
+  DynamicJsonDocument doc(512);
   doc["w_ssid"] = settings.ssid;
   doc["w_pass"] = settings.password;
   doc["w_ap"] = settings.isAPMode;
   doc["fw_ver_name"] = FIRMWARE_VER;
-
+ // Добавляем новые поля
+  doc["local_ip"] = WiFi.localIP().toString();
+  doc["mac_address"] = WiFi.macAddress();
+  doc["hostname"] = WiFi.hostname();
+  // doc["subnet_mask"] = WiFi.subnetMask().toString();
+  // doc["gateway_ip"] = WiFi.gatewayIP().toString();
+  // doc["dns_ip"] = WiFi.dnsIP().toString();
+  doc["rssi"] = WiFi.RSSI();
+  
   String response;
   serializeJson(doc, response);
   server.send(200, "application/json", response);

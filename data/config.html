@@ -69,6 +69,22 @@
                     <label class="form-label">Версия прошивки:</label>
                     <p class="fs-5" id="fw_ver_name"></p>
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">IP адрес:</label>
+                    <p class="fs-5" id="local_ip"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">MAC адрес:</label>
+                    <p class="fs-5" id="mac_address"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Имя хоста:</label>
+                    <p class="fs-5" id="hostname"></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Уровень сигнала (rssi):</label>
+                    <p class="fs-5" id="rssi"></p>
+                </div>
             </div>
             <div class="card-footer">
                 <div class="container">
@@ -124,6 +140,10 @@
         // Обновление UI
         function updateUI(data) {
             document.getElementById('fw_ver_name').textContent = data.fw_ver_name;
+            document.getElementById('local_ip').textContent = data.local_ip;
+            document.getElementById('mac_address').textContent = data.mac_address;
+            document.getElementById('hostname').textContent = data.hostname;
+            document.getElementById('rssi').textContent = data.rssi;
             // Проверяем наличие имени сети в запросе
             let ext_ssid = get("ssid");
             if (ext_ssid !== "") {
