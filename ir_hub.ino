@@ -13,7 +13,7 @@
 #include <WebSocketsServer.h>  //2.6.1
 #include <WiFiUdp.h>
 
-#define FIRMWARE_VER "v2.5.0 (2025.05.20)"
+#define FIRMWARE_VER "v2.5.0 (2025.05.24)"
 
 #define SSID_DEFAULT "AutoConnectAP"
 #define HOSTNAME "irhub"
