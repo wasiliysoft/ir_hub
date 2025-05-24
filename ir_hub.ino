@@ -105,7 +105,7 @@ void setup() {
   server.on("/api/v1/config-erase", HTTP_GET, handleAPI_config_erase);
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
-  server.serveStatic("/", LittleFS, "/");
+  server.serveStatic("/", LittleFS, "/", "max-age=86400"); // 1 сутки = 24 * 3600 = 86400
   server.begin();  // Запуск веб-сервера
   Serial.println("Веб-сервер запущен");
 
