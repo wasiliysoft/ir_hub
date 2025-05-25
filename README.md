@@ -16,10 +16,9 @@
 
 
 ## Схема подключения ИК-передатчика
-<img src="scheme/wemos_d1_transmitter_only_variants.png" alt="WeMos D1 mini scheme" height="200px" />  
+<img src="scheme/wemos_d1_transmitter_only_variants.png" alt="WeMos D1 mini scheme" weight="100%" />  
 
-<img src="scheme/wemos_d1_transmitter_only_1.jpg" alt="WeMos D1 mini example scene 1" height="132px" />
-<img src="scheme/wemos_d1_transmitter_only_3.jpg" alt="WeMos D1 mini example scene 2" height="132px" />
+<img src="scheme/wemos_d1_transmitter_only_1.jpg" alt="WeMos D1 mini example scene 1" height="132px" /><img src="scheme/wemos_d1_transmitter_only_3.jpg" alt="WeMos D1 mini example scene 2" height="132px" />
 
 
 ## Подключение ИК-приемника
@@ -32,20 +31,20 @@
 
 ### Загрузка прошивки
 1. Скачайте файлы `01_firmware.bin` и `02_filesystem_LittleFS.bin` из раздела [Assets](https://github.com/wasiliysoft/ir_hub/releases/latest)
-2. Прошейте файл `01_firmware.bin` через [ESPWebTool](https://esp.huhn.me/). После прошивки плата перезагрузится и создаст точку доступа `AutoConnectAP`, поключитесь к этой точке доступа и перейдите по адресу http://irhub.local/update или http://192.168.4.1/update
-4. Прошейте `файловую систему` загрузив файл `02_filesystem_LittleFS.bin`, после перезагрузки снова полкючитесь к точке доступа `AutoConnectAP` и завершите настройку через WEB интерфейс.
+2. Прошейте файл `01_firmware.bin` через [ESPWebTool](https://esp.huhn.me/). После прошивки плата перезагрузится и создаст точку доступа `AutoConnectAP`, подключитесь к этой точке доступа и перейдите по адресу http://irhub.local/update или http://192.168.4.1/update
+4. Прошейте `файловую систему` загрузив файл `02_filesystem_LittleFS.bin`, после перезагрузки снова подключитесь к точке доступа `AutoConnectAP` и завершите настройку через WEB интерфейс.
 
 ### Интеграция с приложением **IrCode Finder**
 В настройках приложения нужно выбрать тип передатчика `WiFi  (IrHUB)`. Приложение автоматически обнаружит хаб и покажет его IP адрес. Для успешного обнаружения IrHUB и ваше устройство должны быть подключения к одной WiFi сети. 
 
 ### Веб-интерфейс для считывания кодов
-Перейдите по ссылке [http://irhub.local](http://irhub.local) или по IP-адресу, который будет выведен в `монитор консольного порта` а так же в виде уведомления если используется приложение `IrCode Finder`.  
+Перейдите по ссылке [http://irhub.local](http://irhub.local) или по IP-адресу, который будет выведен в `монитор консольного порта`, а так же в виде уведомления если используется приложение `IrCode Finder`.  
 
 На момент публикации прошивки проверена корректность считывания только кодов протокола `NEC`.  
 
 Считанный сигнал нужно дополнить ведущими `0` для получения общей длины кода в `8` символов. По мере тестирования и выпуска обновлений - список протоколов будет дополняться.  
 
-История считанных кодов хранится `локально` на устройстве с которого выполняется поключение к IrHUB.  
+История считанных кодов хранится `локально` на устройстве с которого выполняется подключение к IrHUB.  
 <img src="screenshots/1.png" alt="Home page" width="25%" />
 <img src="screenshots/2.png" alt="Config page" width="25%" />  
 
