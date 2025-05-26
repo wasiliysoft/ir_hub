@@ -13,3 +13,28 @@ String resultToRawArray(decode_results *results) {
   }
   return rawData;
 }
+
+void powerWatchDogTic() {
+  static enum { IDLE,
+                PULSE_LOW } state = IDLE;
+  static uint32_t lastTime = 0;  // вызывается только при инициализации переменной
+
+  uint32_t currentTime = millis();
+
+  switch (state) {
+    case IDLE:
+      if (currentTime - lastTime >= 5000) {
+        digitalWrite(powerWatchDogPin, LOW);
+        lastTime = currentTime;
+        state = PULSE_LOW;
+      }
+      break;
+
+    case PULSE_LOW:
+      if (currentTime - lastTime >= 50) {
+        digitalWrite(powerWatchDogPin, HIGH);
+        state = IDLE;
+      }
+      break;
+  }
+}

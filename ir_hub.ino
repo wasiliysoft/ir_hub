@@ -21,6 +21,7 @@
 #define recvPin D2            // Пин, к которому подключен ИК-приемник
 #define handleResetBtnPin D3  // Пин для кнопки "Сброс и приготовиться"
 #define ledPin D4             // Пин для светодиода (D4 на Wemos D1 Mini соответствует GPIO 2)
+#define powerWatchDogPin D5   // Пин для поддержания ВКЛ состояния на модуле питания
 
 
 #define UDP_PORT 55531  // Порт для широковещательного UDP
@@ -64,12 +65,13 @@ bool isWaitingForIR = false;  // Флаг для управления состо
 void setup() {
   Serial.begin(115200);
   pinMode(ledPin, OUTPUT);
-  pinMode(handleResetBtnPin, INPUT_PULLUP);
   digitalWrite(ledPin, LOW);  // Включаем светодиод при старте
-  delay(1000);
+  pinMode(handleResetBtnPin, INPUT_PULLUP);
+  pinMode(powerWatchDogPin, OUTPUT);
+
+  delay(500);
   Serial.println();
   Serial.println();
-  delay(1000);
 
   // EEPROM.begin(sizeof(Settings));
   EEPROM.begin(1023);
@@ -105,8 +107,8 @@ void setup() {
   server.on("/api/v1/config-erase", HTTP_GET, handleAPI_config_erase);
   server.on("/reset", handleReset);
   server.on("/sendIr/", HTTP_POST, handleSendRaw);
-  server.serveStatic("/", LittleFS, "/", "max-age=86400"); // 1 сутки = 24 * 3600 = 86400
-  server.begin();  // Запуск веб-сервера
+  server.serveStatic("/", LittleFS, "/", "max-age=86400");  // 1 сутки = 24 * 3600 = 86400
+  server.begin();                                           // Запуск веб-сервера
   Serial.println("Веб-сервер запущен");
 
   // Запуск WebSocket
@@ -158,6 +160,8 @@ void loop() {
   // Обработка кнопок
   btnTic();
   yield();
+
+  powerWatchDogTic();
 }
 
 void doIrReceive() {
@@ -208,7 +212,7 @@ void handleAPI_config_read() {
   doc["w_pass"] = settings.password;
   doc["w_ap"] = settings.isAPMode;
   doc["fw_ver_name"] = FIRMWARE_VER;
- // Добавляем новые поля
+  // Добавляем новые поля
   doc["local_ip"] = WiFi.localIP().toString();
   doc["mac_address"] = WiFi.macAddress();
   doc["hostname"] = WiFi.hostname();
@@ -216,7 +220,7 @@ void handleAPI_config_read() {
   // doc["gateway_ip"] = WiFi.gatewayIP().toString();
   // doc["dns_ip"] = WiFi.dnsIP().toString();
   doc["rssi"] = WiFi.RSSI();
-  
+
   String response;
   serializeJson(doc, response);
   server.send(200, "application/json", response);
