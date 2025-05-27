@@ -16,16 +16,13 @@
 
 
 ## Схема подключения ИК-передатчика
+### WeMos D1 Mini
 <img src="scheme/wemos_d1_transmitter_only_variants.png" alt="WeMos D1 mini scheme" weight="100%" />  
 
 <img src="scheme/wemos_d1_transmitter_only_1.jpg" alt="WeMos D1 mini example scene 1" height="132px" /><img src="scheme/wemos_d1_transmitter_only_3.jpg" alt="WeMos D1 mini example scene 2" height="132px" />
 
-
-## Подключение ИК-приемника
-
-- **VCC** → 3.3V на WEMOS D1 mini
-- **GND** → GND на WEMOS D1 mini
-- **OUT** → D2 на WEMOS D1 mini
+### NodeMCU v3 (CH340)
+<img src="scheme/node_mcu_ch340.jpg" alt="NodeMCU v3 (CH340) example scheme" weight="100%" />  
 
 ## Настройка и запуск
 
