@@ -25,9 +25,9 @@ function addToHistory(data) {
     let history = getHistory();
     history.unshift(historyItem);
 
-    // Ограничиваем историю последними 50 записями
-    if (history.length > 50) {
-        history = history.slice(0, 50);
+    // Ограничиваем историю последними 500 записями
+    if (history.length > 500) {
+        history = history.slice(0, 500);
     }
 
     saveHistory(history);
