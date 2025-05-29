@@ -7,6 +7,8 @@
     <meta name='viewport' content='width=device-width,initial-scale=1'>
     <link rel="icon" href="/favicon.ico" type="image/x-icon">
     <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/icon.css" rel="stylesheet">
+
     <script src="js/themeswitch.js"></script>
 </head>
 
@@ -16,7 +18,9 @@
             <h1>Настройки</h1>
             <div class="ms-auto"></div>
             <div class="vr"></div>
-            <button type="button" class="btn btn-success" onclick="save()">СОХРАНИТЬ</button>
+            <button type="button" class="btn btn-success" onclick="save()">
+                <i class="material-icons">save</i> СОХРАНИТЬ
+            </button>
         </div>
 
         <div class="card mb-5">
@@ -54,11 +58,13 @@
             <div class="card-footer">
                 <div class="container">
                     <div class="row g-2">
-                        <a href='/scan_network.html' class="col col-md-4 col-12 btn btn-primary ">СКАНИРОВАТЬ ДОСТУПНЫЕ
-                            СЕТИ</a>
+                        <a href='/scan_network.html' class="col col-md-4 col-12 btn btn-primary">
+                            <i class="material-icons">wifi_find</i> СКАНИРОВАТЬ ДОСТУПНЫЕ СЕТИ
+                        </a>
                         <div class="col ms-auto"></div>
-                        <button onclick="erase();" class="col col-md-4 col-12 btn btn-outline-danger ">СБРОСИТЬ
-                            НАСТРОЙКИ Wi-Fi</button>
+                        <button onclick="erase();" class="col col-md-4 col-12 btn btn-outline-danger">
+                            <i class="material-icons">restore</i> СБРОСИТЬ НАСТРОЙКИ Wi-Fi
+                        </button>
                     </div>
                 </div>
             </div>
@@ -92,7 +98,9 @@
             <div class="card-footer">
                 <div class="container">
                     <div class="row g-2">
-                        <a href='/update' class="col col-md-4 col-12 btn btn-primary ">ОБНОВЛЕНИЕ ПРОШИВКИ</a>
+                        <a href='/update' class="col col-md-4 col-12 btn btn-primary ">
+                            <i class="material-icons">upgrade</i> ОБНОВЛЕНИЕ ПРОШИВКИ
+                        </a>
                         <div class="col ms-auto"></div>
                     </div>
                 </div>
@@ -102,7 +110,9 @@
 
 
         <div class="container hstack gap-3 mb-3">
-            <a href='/' class="btn btn-outline-primary">НАЗАД</a>
+            <a href='/' class="btn btn-outline-primary">
+                <i class="material-icons">arrow_back</i> НАЗАД
+            </a>
             <!-- <div class="ms-auto"></div> -->
             <!-- <div class="vr"></div> -->
             <!-- <div class="ms-auto"></div> -->

@@ -4,6 +4,7 @@
   font-weight: 400;
   src: url('/fonts/material-icons/MaterialIcons-Regular.woff2') format('woff2');
 }
+
 .material-icons {
   font-family: 'Material Icons';
   font-weight: normal;
@@ -19,4 +20,7 @@
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
   -moz-osx-font-smoothing: grayscale;
+  vertical-align: middle;
+  position: relative;
+  top: -2px;
 }

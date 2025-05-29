@@ -50,7 +50,7 @@
       </div>
       <div class="ms-auto"></div>
       <div class="vr"></div>
-      <a href='/config.html' class="btn btn-outline-primary">Настройки</a>
+      <a href='/config.html' class="btn btn-outline-primary"><i class="material-icons">settings</i> Настройки</a>
     </div>
 
     <!-- Карточка последнего сигнала -->
@@ -71,26 +71,35 @@
           <label class="form-label">RAW данные:</label>
           <div class="input-group">
             <input class="p-3 form-control " type="text" readonly placeholder="Ожидание сигнала..." id="ir-raw">
-            <button id="copy-last-raw" class="btn btn-outline-secondary" type="button">
-              <div class="d-flex align-content-center justify-content-center"><span
-                  class="material-icons me-1 ph-2">content_copy</span>
-              </div>
+            <button id="copy-last-raw" class="btn btn-outline-secondary" onclick="copyLastReceivedRaw();">
+                <i class="material-icons">content_copy</i>
             </button>
           </div>
         </div>
-
       </div>
-
       <div class="card-footer d-flex justify-content-end">
-        <button id="reset_to_ready" class="btn btn-primary col-md-4 col-12">СБРОСИТЬ И ПРИГОТОВИТЬСЯ</button>
+        <button id="reset_to_ready" class="btn btn-primary col-md-4 col-12" onclick="resetToReady();">
+          <i class="material-icons">update</i> СБРОСИТЬ И ПРИГОТОВИТЬСЯ
+        </button>
       </div>
     </div>
 
     <!-- Карточка истории сигналов -->
     <div class="card mb-5">
       <div class="card-header">
-        <h2 class="h5 mb-0">История сигналов:</h2>
+        <div class="container hstack">
+          <h2 class="h5 mb-0">История сигналов:</h2>
+          <div class="ms-auto"></div>
+          <div class="vr me-2"></div>
+          <div class="btn-group" role="group">
+            <button id="download-history" class="btn btn-sm btn-outline-success" onclick="exportHistoryToCSV();">
+              <i class="material-icons pt-1">download</i></button>
+            <button id="clear-history" class="btn btn-sm btn-outline-danger" onclick="clearHistory();">
+              <i class="material-icons pt-1">delete</i></button>
+          </div>
+        </div>
       </div>
+
       <div class="card-body p-0">
         <div class="table-responsive">
           <table class="table table-striped table-hover mb-0 table-mobile-responsive" id="history-table">
@@ -108,14 +117,10 @@
           </table>
         </div>
       </div>
-      <div class="card-footer d-flex justify-content-end">
-        <button id="clear-history" class="btn btn-danger col-md-4 col-12">ОЧИСТИТЬ ИСТОРИЮ</button>
-      </div>
     </div>
-
-
   </div>
 
+  <script src="js/history.js"></script>
   <script src="js/index.js"></script>
   <script src="js/bootstrap.bundle.min.js"></script>
 
