@@ -9,9 +9,9 @@ void startClientMode() {
   WiFi.mode(WIFI_STA);
   WiFi.begin(settings.ssid, settings.password);
   while (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(ledPin, LOW);
+    digitalWrite(LED_PIN, LOW);
     delay(400);
-    digitalWrite(ledPin, HIGH);
+    digitalWrite(LED_PIN, HIGH);
     delay(400);
     Serial.print(".");
     if (millis() > 10000) {

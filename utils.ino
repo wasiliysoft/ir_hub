@@ -22,7 +22,7 @@ void powerWatchDogTic() {
   switch (state) {
   case IDLE:
     if (currentTime - lastTime >= 5000) {
-      digitalWrite(powerWatchDogPin, LOW);
+      digitalWrite(POWER_WATCH_DOG_PIN, LOW);
       lastTime = currentTime;
       state = PULSE_LOW;
     }
@@ -30,7 +30,7 @@ void powerWatchDogTic() {
 
   case PULSE_LOW:
     if (currentTime - lastTime >= 50) {
-      digitalWrite(powerWatchDogPin, HIGH);
+      digitalWrite(POWER_WATCH_DOG_PIN, HIGH);
       state = IDLE;
     }
     break;

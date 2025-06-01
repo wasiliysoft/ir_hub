@@ -1,3 +1,4 @@
+#include "config.h"
 #include <EEPROM.h>
 #include <LittleFS.h>     // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
 #include <ArduinoJson.h>  //7.4.1
@@ -12,27 +13,7 @@
 #include <IRutils.h>
 #include <WebSocketsServer.h>  //2.6.1
 #include <WiFiUdp.h>
-
-#define FIRMWARE_VER "v2.6.0 (2025.05.29)"
-
-#define SSID_DEFAULT "AutoConnectAP"
-#define HOSTNAME "irhub"
-#define irLedPin D1           // Пин для ИК светодиода (D1 на Wemos D1 Mini соответствует GPIO 5)
-#define recvPin D2            // Пин, к которому подключен ИК-приемник
-#define handleResetBtnPin D3  // Пин для кнопки "Сброс и приготовиться"
-#define ledPin D4             // Пин для светодиода (D4 на Wemos D1 Mini соответствует GPIO 2)
-#define powerWatchDogPin D5   // Пин для поддержания ВКЛ состояния на модуле питания
-
-
-#define UDP_PORT 55531  // Порт для широковещательного UDP
-
-#define DEBUG 0  // 1 для включения отладки, 0 для отключения
-
-#if (DEBUG == 1)
-#define DEBUG_PRINTF(fmt, ...) Serial.printf(fmt "\n", ##__VA_ARGS__)
-#else
-#define DEBUG_PRINTF(fmt, ...)
-#endif
+#include "GirsClient.h"
 
 ESP8266WebServer server(80);
 ESP8266HTTPUpdateServer httpUpdater;
@@ -42,6 +23,7 @@ WebSocketsServer webSocket = WebSocketsServer(81);
 WiFiUDP udp;
 char udpBuffer[255];
 
+// TODO использваоть girs_sendraw
 uint16_t irSendBuf[255];  // буфер для хранения RAW шаблона команды
 
 
@@ -53,9 +35,10 @@ struct Settings {
 };
 Settings settings;
 
-IRrecv irrecv(recvPin);
-IRsend irsend(irLedPin);
+IRrecv irrecv(IR_RECV_PIN);
+IRsend irsend(IR_LED_PIN);
 decode_results results;  // Буфер для хранения полученных ИК данных
+
 // Переменные для хранения последней полученной ИК-команды
 String lastIRCode = "Ожидание сигнала...";
 String lastIRProtocol = lastIRCode;
@@ -64,11 +47,10 @@ bool isWaitingForIR = false;  // Флаг для управления состо
 
 void setup() {
   Serial.begin(115200);
-  pinMode(ledPin, OUTPUT);
-  digitalWrite(ledPin, LOW);  // Включаем светодиод при старте
-  pinMode(handleResetBtnPin, INPUT_PULLUP);
-  pinMode(powerWatchDogPin, OUTPUT);
-
+  pinMode(LED_PIN, OUTPUT);
+  digitalWrite(LED_PIN, LOW);  // Включаем светодиод при старте
+  pinMode(READY_TO_RECEIVE_BTN_PIN, INPUT_PULLUP);
+  pinMode(POWER_WATCH_DOG_PIN, OUTPUT);
   delay(500);
   Serial.println();
   Serial.println();
@@ -85,7 +67,7 @@ void setup() {
     Serial.println("Ошибка настройки mDNS!");
   } else {
     MDNS.addService("http", "tcp", 80);
-    Serial.println("mDNS запущен, имя хоста: " + String(HOSTNAME) + ".local");
+    Serial.println("mDNS запущен, имя хоста: http://" + String(HOSTNAME) + ".local");
   }
 
   LittleFS.begin();
@@ -122,9 +104,11 @@ void setup() {
   irrecv.enableIRIn();  // Инициализация ИК-приемника
   irsend.begin();       // Инициализация ИК-передатчика
 
+  girs_begin();
+
   Serial.println("Загрузка завершена");
   Serial.println("Версия прошивки: " + String(FIRMWARE_VER));
-  digitalWrite(ledPin, HIGH);  // Выключаем светодиод
+  digitalWrite(LED_PIN, HIGH);  // Выключаем светодиод
 }
 
 void loop() {
@@ -162,6 +146,10 @@ void loop() {
   yield();
 
   powerWatchDogTic();
+  yield();
+
+  girs_tic();
+  yield();
 }
 
 void doIrReceive() {
@@ -175,12 +163,12 @@ void doIrReceive() {
     irrecv.pause();
     isWaitingForIR = false;
     notifyReceivedDataSetChanged();
-    digitalWrite(ledPin, HIGH);
+    digitalWrite(LED_PIN, HIGH);
   }
 }
 
 void btnTic() {
-  if (digitalRead(handleResetBtnPin) == LOW) {
+  if (digitalRead(READY_TO_RECEIVE_BTN_PIN) == LOW) {
     handleReset();
   }
 }
@@ -279,9 +267,9 @@ void handleReset() {
   // Сбрасываем последний ИК код
   lastIRProtocol = lastIRCode = lastIRRaw = "Ожидание сигнала...";
   notifyReceivedDataSetChanged();
-  isWaitingForIR = true;      // Включаем режим ожидания ИК-сигнала
-  irrecv.resume();            // Возобновляем работу приемника
-  digitalWrite(ledPin, LOW);  // Включаем светодиод (инвертировано)
+  isWaitingForIR = true;       // Включаем режим ожидания ИК-сигнала
+  irrecv.resume();             // Возобновляем работу приемника
+  digitalWrite(LED_PIN, LOW);  // Включаем светодиод (инвертировано)
   // Перенаправляем на главную страницу
   server.sendHeader("Location", "/");
   server.send(303);
@@ -289,7 +277,7 @@ void handleReset() {
 
 
 void handleSendRaw() {
-  digitalWrite(ledPin, LOW);
+  digitalWrite(LED_PIN, LOW);
   uint16_t hz = server.arg("freq").toInt();
   String pattern = server.arg("patt");
 
@@ -310,7 +298,7 @@ void handleSendRaw() {
   irsend.sendRaw(irSendBuf, pulses, hz);
   yield();
   server.send(200, "text/plain", "success");
-  digitalWrite(ledPin, HIGH);
+  digitalWrite(LED_PIN, HIGH);
 }
 
 /// Ретрансляция irSendBuf на остальне узлы сети по UDP
@@ -368,7 +356,7 @@ void handleUDP() {
     udp.endPacket();
     DEBUG_PRINTF("Отправлен MAC-адрес: %s на IP: %s", macAddress.c_str(), udp.remoteIP().toString().c_str());
   } else if (memcmp(udpBuffer, "IRHUB_S01", 10) == 0) {
-    digitalWrite(ledPin, LOW);
+    digitalWrite(LED_PIN, LOW);
     DEBUG_PRINTF("Получена ИК команда от IP: %s", udp.remoteIP().toString().c_str());
     uint16_t hz = 0;
     uint16_t pulses = 0;
@@ -385,6 +373,6 @@ void handleUDP() {
     DEBUG_PRINTF("pulses: %i", pulses);
     DEBUG_PRINTF("irSendBuf[0]: %i", irSendBuf[0]);
     DEBUG_PRINTF("irSendBuf[pulses-1]: %i", irSendBuf[pulses - 1]);
-    digitalWrite(ledPin, HIGH);
+    digitalWrite(LED_PIN, HIGH);
   }
 }
