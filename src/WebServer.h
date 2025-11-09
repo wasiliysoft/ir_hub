@@ -13,7 +13,7 @@
 #include <ESP8266WebServer.h>
 #include <LittleFS.h> // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
 
-extern Config config;
+extern ConfigMgr config;
 extern UDPServer udp;
 extern void readyToReceive();
 

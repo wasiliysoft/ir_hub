@@ -6,12 +6,13 @@
 #include "WiFiMgr.h"
 #include "config.h"
 
-Config config;
+ConfigMgr config;
 WiFiMgr wifiMgr;
 WebUI webUI;
 UDPServer udp;
 IrServer irServer;
 WebSocketMgr webSocketMgr;
+GirsClient girsClient;
 
 void powerWatchDogTic();
 void btnTic();
@@ -33,8 +34,7 @@ void setup() {
   Serial.println("WebSocket запущен");
   udp.begin(UDP_PORT);
   irServer.begin();
-
-  girs_begin();
+  girsClient.begin();
 
   Serial.println("Загрузка завершена");
   Serial.println("Версия прошивки: " + String(FIRMWARE_VER));
@@ -71,7 +71,7 @@ void loop() {
   powerWatchDogTic();
   yield();
 
-  girs_tic();
+  girsClient.update();
   yield();
 }
 

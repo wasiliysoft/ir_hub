@@ -1,22 +1,12 @@
 #include "GirsClient.h"
 
 #ifdef BT_HC06
-#include <SoftwareSerial.h>
 SoftwareSerial BTserial(BT_RX_PIN, BT_TX_PIN);
 #endif
 
+GirsClient* GirsClient::girsInstance = nullptr;
 
-
-// Глобальные переменные для обработчика прерывания
-static const unsigned long DUMMYENDING = 40000U;
-static const uint16_t GIRS_BUFFER_SIZE = 512;
-volatile unsigned long g_lastIsrTime = 0;
-volatile unsigned long g_lastIsrTimeMs = 0;
-volatile unsigned long g_durations[GIRS_BUFFER_SIZE];
-volatile uint16_t g_pulseIndex = 0;
-
-// Обработчик прерывания
-IRAM_ATTR void handleInterrupt() {
+IRAM_ATTR void GirsClient::handleInterrupt() {
   const unsigned long currentTime = micros();
   const unsigned long duration = currentTime - g_lastIsrTime;
   g_lastIsrTime = currentTime;
@@ -26,46 +16,14 @@ IRAM_ATTR void handleInterrupt() {
     g_durations[g_pulseIndex++] = duration;
   }
 }
-// Инициализация
-void girs_begin() {
-  pinMode(IR_RECV_PIN, INPUT_PULLUP);
-#ifdef BT_HC06
-  BTserial.begin(9600);  // Стандартная скорость HC-06
-#endif
-}
 
-// Основной цикл обработки команд
-void girs_tic() {
-  // Обработка последовательного порта
-  if (Serial.available()) {
-    String line = Serial.readStringUntil('\r');
-    girs_processCommand(line, Serial);
+void GirsClient::handleInterruptStatic() {
+  if (girsInstance) {
+    girsInstance->handleInterrupt();
   }
-  yield();
-#ifdef BT_HC06
-  // Обработка Bluetooth
-  if (BTserial.available()) {
-    String line = BTserial.readStringUntil('\r');
-    girs_processCommand(line, BTserial);
-  }
-  yield();
-#endif
 }
 
-
-
-// Преобразование Гц в кГц
-static inline unsigned hz2khz(uint16_t hz) {
-  return (hz + 500) / 1000;
-}
-
-// Округление до ближайшего 32
-static inline unsigned roundToNearest32(unsigned long value) {
-  return (value + 16) & 0xFFFFFFE0;
-}
-
-// Получение следующего токена из строки
-String girs_getNextToken(String& str) {
+String GirsClient::girs_getNextToken(String &str) {
   str.trim();
   int spacePos = str.indexOf(' ');
   if (spacePos == -1) {
@@ -80,25 +38,29 @@ String girs_getNextToken(String& str) {
   return token;
 }
 
-// Отправка ИК-сигнала
-void girs_sendRaw(const uint16_t intro[], unsigned lengthIntro, const uint16_t repeat[], unsigned lengthRepeat, const uint16_t ending[], unsigned lengthEnding, uint16_t frequency, unsigned times) {
-  if (lengthIntro > 0U) irServer.sendRaw(intro, lengthIntro, hz2khz(frequency));
+void GirsClient::girs_sendRaw(const uint16_t intro[], unsigned lengthIntro,
+                              const uint16_t repeat[], unsigned lengthRepeat,
+                              const uint16_t ending[], unsigned lengthEnding,
+                              uint16_t frequency, unsigned times) {
+  if (lengthIntro > 0U)
+    irServer.sendRaw(intro, lengthIntro, hz2khz(frequency));
   if (lengthRepeat > 0U) {
     for (unsigned i = 0U; i < times - (lengthIntro > 0U); i++) {
       irServer.sendRaw(repeat, lengthRepeat, hz2khz(frequency));
     }
   }
-  if (lengthEnding > 0U) irServer.sendRaw(ending, lengthEnding, hz2khz(frequency));
+  if (lengthEnding > 0U)
+    irServer.sendRaw(ending, lengthEnding, hz2khz(frequency));
 }
 
-// Прием ИК-сигнала
-void girs_receive(Stream& stream) {
+void GirsClient::girs_receive(Stream &stream) {
   g_pulseIndex = 0;
   const unsigned long startTime = millis();
   bool isReady = true;
   g_lastIsrTime = micros();
   g_lastIsrTimeMs = millis();
-  attachInterrupt(digitalPinToInterrupt(IR_RECV_PIN), handleInterrupt, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(IR_RECV_PIN), handleInterruptStatic,
+                  CHANGE);
   bool isTimeout = false;
   digitalWrite(LED_PIN, LOW);
 
@@ -137,8 +99,7 @@ void girs_receive(Stream& stream) {
   }
 }
 
-// Обработка команд
-void girs_processCommand(const String& line, Stream& stream) {
+void GirsClient::girs_processCommand(const String &line, Stream &stream) {
   String cmdStr = line;
   String cmd = girs_getNextToken(cmdStr);
 
@@ -172,7 +133,8 @@ void girs_processCommand(const String& line, Stream& stream) {
     for (unsigned i = 0; i < endingLength; i++)
       ending[i] = (uint16_t)girs_getNextToken(cmdStr).toInt();
 
-    girs_sendRaw(intro, introLength, repeat, repeatLength, ending, endingLength, frequency, noSends);
+    girs_sendRaw(intro, introLength, repeat, repeatLength, ending,
+                 endingLength, frequency, noSends);
     yield();
     stream.println(F("OK"));
     yield();
@@ -184,4 +146,32 @@ void girs_processCommand(const String& line, Stream& stream) {
   default:
     stream.println(F("ERROR"));
   }
+}
+
+GirsClient::GirsClient() {
+  girsInstance = this;
+}
+
+void GirsClient::begin() {
+  pinMode(IR_RECV_PIN, INPUT_PULLUP);
+#ifdef BT_HC06
+  BTserial.begin(9600); // Стандартная скорость HC-06
+#endif
+}
+
+void GirsClient::update() {
+  // Обработка последовательного порта
+  if (Serial.available()) {
+    String line = Serial.readStringUntil('\r');
+    girs_processCommand(line, Serial);
+  }
+  yield();
+#ifdef BT_HC06
+  // Обработка Bluetooth
+  if (BTserial.available()) {
+    String line = BTserial.readStringUntil('\r');
+    girs_processCommand(line, BTserial);
+  }
+  yield();
+#endif
 }

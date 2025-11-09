@@ -5,7 +5,7 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 
-extern Config config;
+extern ConfigMgr config;
 
 class WiFiMgr {
   DNSServer dnsServer;

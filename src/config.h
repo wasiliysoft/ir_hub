@@ -42,7 +42,7 @@ struct IRData {
 };
 
 // Класс для управления настройками
-class Config {
+class ConfigMgr {
 public:
   // Инициализация EEPROM и загрузка настроек
   void begin() {
