@@ -14,7 +14,6 @@
 #include <LittleFS.h> // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
 
 extern Config config;
-extern void notifyReceivedDataSetChanged();
 extern UDPServer udp;
 extern void readyToReceive();
 
@@ -166,6 +165,7 @@ private:
     }
 
     // отправляем на все узлы в сети
+    // TODO Добавить в WEB интерфейс выбор отправки по UDP или только локально
     udp.sendUDPRawIR(irSendBuf, pulses, hz);
     yield();
     // отправляем команду на ИК диод

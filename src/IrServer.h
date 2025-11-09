@@ -6,21 +6,16 @@
 #include <IRsend.h>
 #include <IRutils.h>
 
-#ifndef IRHUB_CONFIG_H
-#include "config.h"
+#ifndef WEB_SOCKET_MGR_H
+#include "WebSocketMgr.h"
 #endif
 
-extern void notifyReceivedDataSetChanged();
-static const String waitText = "Ожидание сигнала..";
+extern WebSocketMgr webSocketMgr;
 
 class IrServer {
 
 private:
-  struct LastIRData {
-    String hexcode = waitText;
-    String protocol = waitText;
-    String raw = waitText;
-  } lastIRData;
+  IRData lastIRData;
 
   IRrecv recv = IRrecv(IR_RECV_PIN);
   IRsend send = IRsend(IR_LED_PIN);
@@ -64,7 +59,7 @@ public:
       DEBUG_PRINTF("RAW данные: %s", lastIRRaw);
       recv.pause();
       isWaitingForIR = false;
-      notifyReceivedDataSetChanged();
+      webSocketMgr.notifyReceivedDataSetChanged(lastIRData);
       digitalWrite(LED_PIN, HIGH);
     }
   }
@@ -84,7 +79,7 @@ public:
     lastIRData.raw = waitText;
   }
 
-  LastIRData getLastIRData() { return lastIRData; }
+  IRData getLastIRData() { return lastIRData; }
 };
 
 #endif

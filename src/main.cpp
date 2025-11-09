@@ -2,21 +2,19 @@
 #include "IrServer.h"
 #include "UDPServer.h"
 #include "WebServer.h"
+#include "WebSocketMgr.h"
 #include "WiFiMgr.h"
 #include "config.h"
 
-#include <WebSocketsServer.h>
-
-WebSocketsServer webSocket = WebSocketsServer(81);
 Config config;
 WiFiMgr wifiMgr;
 WebUI webUI;
 UDPServer udp;
 IrServer irServer;
+WebSocketMgr webSocketMgr;
 
 void powerWatchDogTic();
 void btnTic();
-void notifyReceivedDataSetChanged();
 
 void setup() {
   Serial.begin(115200);
@@ -31,7 +29,7 @@ void setup() {
   config.begin();
   wifiMgr.begin();
   webUI.begin();
-  webSocket.begin();
+  webSocketMgr.begin();
   Serial.println("WebSocket запущен");
   udp.begin(UDP_PORT);
   irServer.begin();
@@ -52,9 +50,10 @@ void loop() {
   delay(1);
 
   wifiMgr.uopdate();
+  yield();
 
   // Обработка событий WebSocket
-  webSocket.loop();
+  webSocketMgr.update();
   yield();
 
   // Обработка входящих UDP-пакетов
@@ -86,18 +85,9 @@ void btnTic() {
 void readyToReceive() {
   // Сбрасываем последний ИК код
   irServer.resetLastIRData();
-  notifyReceivedDataSetChanged();
+  webSocketMgr.notifyReceivedDataSetChanged(irServer.getLastIRData());
   irServer.enableReceiver();
   digitalWrite(LED_PIN, LOW); // Включаем светодиод (инвертировано)W
-}
-
-void notifyReceivedDataSetChanged() {
-  String lastIRCode = irServer.getLastIRData().hexcode;
-  String lastIRProtocol = irServer.getLastIRData().protocol;
-  String lastIRRaw = irServer.getLastIRData().raw;
-  String jsonData = "{\"code\":\"" + lastIRCode + "\",\"protocol\":\"" +
-                    lastIRProtocol + "\",\"raw\":\"" + lastIRRaw + "\"}";
-  webSocket.broadcastTXT(jsonData);
 }
 
 void powerWatchDogTic() {
