@@ -87,8 +87,10 @@ void loop() {
 }
 
 void btnTic() {
+  // TODO FIXME при использовании IrScrutinizer он постоянно шлет Сигнал DTR в
+  // Serial, это приводит к тому что pin D3 на NodeMCU переходит в состояние LOW
   if (digitalRead(READY_TO_RECEIVE_BTN_PIN) == LOW) {
-    readyToReceive();
+    // readyToReceive();
   }
 }
 
