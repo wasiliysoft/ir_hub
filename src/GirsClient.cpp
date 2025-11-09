@@ -82,13 +82,13 @@ String girs_getNextToken(String& str) {
 
 // Отправка ИК-сигнала
 void girs_sendRaw(const uint16_t intro[], unsigned lengthIntro, const uint16_t repeat[], unsigned lengthRepeat, const uint16_t ending[], unsigned lengthEnding, uint16_t frequency, unsigned times) {
-  if (lengthIntro > 0U) irsend.sendRaw(intro, lengthIntro, hz2khz(frequency));
+  if (lengthIntro > 0U) irServer.sendRaw(intro, lengthIntro, hz2khz(frequency));
   if (lengthRepeat > 0U) {
     for (unsigned i = 0U; i < times - (lengthIntro > 0U); i++) {
-      irsend.sendRaw(repeat, lengthRepeat, hz2khz(frequency));
+      irServer.sendRaw(repeat, lengthRepeat, hz2khz(frequency));
     }
   }
-  if (lengthEnding > 0U) irsend.sendRaw(ending, lengthEnding, hz2khz(frequency));
+  if (lengthEnding > 0U) irServer.sendRaw(ending, lengthEnding, hz2khz(frequency));
 }
 
 // Прием ИК-сигнала

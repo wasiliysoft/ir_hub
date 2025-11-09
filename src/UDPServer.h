@@ -2,12 +2,9 @@
 #define UDP_SERVER_H
 
 #include <ESP8266WiFi.h>
-#include <IRsend.h>
 #include <WiFiUdp.h>
 
-
-extern IRsend irsend;
-extern uint16_t irSendBuf[255]; // буфер для хранения RAW шаблона команды
+extern IrServer irServer;
 
 class UDPServer {
   WiFiUDP udp;
@@ -15,6 +12,7 @@ class UDPServer {
 
 public:
   void begin(uint16_t port) { udp.begin(port); }
+
   void update() {
     int packetSize = udp.parsePacket();
     if (!packetSize)
@@ -49,12 +47,16 @@ public:
       uint16_t pulses = 0;
       hz = (udpBuffer[10] << 8) | udpBuffer[11];
       pulses = (udpBuffer[12] << 8) | udpBuffer[13];
+
+      uint16_t irSendBuf[255]; // буфер для хранения RAW шаблона команды
+
       for (uint16_t i = 0; i < pulses; i++) {
         irSendBuf[i] = (udpBuffer[14 + i * 2] << 8) | udpBuffer[14 + i * 2 + 1];
       }
       yield();
       // отправляем команду на ИК диод
-      irsend.sendRaw(irSendBuf, pulses, hz);
+      irServer.sendRaw(irSendBuf, pulses, hz);
+
       yield();
       DEBUG_PRINTF("hz: %i", hz);
       DEBUG_PRINTF("pulses: %i", pulses);
@@ -64,25 +66,26 @@ public:
     }
   }
 
-  /// Ретрансляция irSendBuf на остальне узлы сети по UDP
+  /// Ретрансляция buf на остальне узлы сети по UDP
   /// @param[in] hz несущая частота
-  /// @param[in] pulses размер выборки из буфера
-  void sendUDPRawIR(uint16_t hz, uint16_t pulses) {
+  /// @param[in] len размер выборки из буфера
+  void sendUDPRawIR(const uint16_t buf[], const uint16_t len,
+                    const uint16_t hz) {
     char type[10] = "IRHUB_S01";
 
     // Заголовок 14 байт
     // 10 байт (тип) + 2 байта (hz) + 2 байта (длина) + данные
-    uint8_t packet[14 + pulses * 2];
+    uint8_t packet[14 + len * 2];
 
-    memcpy(packet, type, 10);          // Тип пакета и версия формата
-    packet[10] = (hz >> 8) & 0xFF;     // Старший байт hz
-    packet[11] = hz & 0xFF;            // Младший байт hz
-    packet[12] = (pulses >> 8) & 0xFF; // Старший байт длины
-    packet[13] = pulses & 0xFF;        // Младший байт длины
+    memcpy(packet, type, 10);       // Тип пакета и версия формата
+    packet[10] = (hz >> 8) & 0xFF;  // Старший байт hz
+    packet[11] = hz & 0xFF;         // Младший байт hz
+    packet[12] = (len >> 8) & 0xFF; // Старший байт длины
+    packet[13] = len & 0xFF;        // Младший байт длины
 
-    for (uint16_t i = 0; i < pulses; i++) {
-      packet[14 + i * 2] = (irSendBuf[i] >> 8) & 0xFF;
-      packet[14 + i * 2 + 1] = irSendBuf[i] & 0xFF;
+    for (uint16_t i = 0; i < len; i++) {
+      packet[14 + i * 2] = (buf[i] >> 8) & 0xFF;
+      packet[14 + i * 2 + 1] = buf[i] & 0xFF;
     }
 
     // Устанавливаем широковещательный адрес

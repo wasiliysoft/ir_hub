@@ -4,10 +4,12 @@
 #include "config.h"
 #include <Arduino.h>
 #include <IRremoteESP8266.h>
-#include <IRsend.h>
 
-// Объявление внешних переменных (определены в .ino файле)
-extern IRsend irsend;
+#ifndef IR_SERVER_H
+#include "IrServer.h"
+#endif
+
+extern IrServer irServer;
 
 // Прототипы функций
 void girs_begin();

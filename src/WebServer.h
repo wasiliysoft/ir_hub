@@ -4,30 +4,18 @@
 #ifndef UDP_SERVER_H
 #include "UDPServer.h"
 #endif
+#ifndef IR_SERVER_H
+#include "IrServer.h"
+#endif
 
 #include <ArduinoJson.h>
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
 #include <LittleFS.h> // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
 
-#include <IRrecv.h>
-#include <IRremoteESP8266.h> //2.8.6
-#include <IRsend.h>
-#include <IRutils.h>
-
 extern Config config;
-extern String lastIRProtocol;
-extern String lastIRCode;
-extern String lastIRRaw;
-extern bool isWaitingForIR;
 extern void notifyReceivedDataSetChanged();
-
-extern IRsend irsend;
-extern IRrecv irrecv;
-extern decode_results results;
-
 extern UDPServer udp;
-extern uint16_t irSendBuf[255]; // буфер для хранения RAW шаблона команды
 extern void readyToReceive();
 
 class WebUI {
@@ -74,9 +62,9 @@ public:
 private:
   void handleAPI_last_received_data() {
     JsonDocument doc;
-    doc["protocol"] = lastIRProtocol;
-    doc["code"] = lastIRCode;
-    doc["raw"] = lastIRRaw;
+    doc["protocol"] = irServer.getLastIRData().protocol;
+    doc["code"] = irServer.getLastIRData().hexcode;
+    doc["raw"] = irServer.getLastIRData().raw;
 
     String response;
     serializeJson(doc, response);
@@ -166,6 +154,9 @@ private:
 
     int pulses = 0;
     int startIndex = 0;
+
+    uint16_t irSendBuf[255]; // буфер для хранения RAW шаблона команды
+
     for (unsigned int i = 0; i <= pattern.length(); i++) {
       if (i == pattern.length() || pattern.charAt(i) == ',') {
         irSendBuf[pulses++] = pattern.substring(startIndex, i).toInt();
@@ -175,10 +166,10 @@ private:
     }
 
     // отправляем на все узлы в сети
-    udp.sendUDPRawIR(hz, pulses);
+    udp.sendUDPRawIR(irSendBuf, pulses, hz);
     yield();
     // отправляем команду на ИК диод
-    irsend.sendRaw(irSendBuf, pulses, hz);
+    irServer.sendRaw(irSendBuf, pulses, hz);
     yield();
     server.send(200, "text/plain", "success");
     digitalWrite(LED_PIN, HIGH);

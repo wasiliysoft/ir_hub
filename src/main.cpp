@@ -1,43 +1,23 @@
 #include "GirsClient.h"
-#include "config.h"
-
-#include <IRrecv.h>
-#include <IRremoteESP8266.h> //2.8.6
-#include <IRsend.h>
-#include <IRutils.h>
-
+#include "IrServer.h"
 #include "UDPServer.h"
 #include "WebServer.h"
 #include "WiFiMgr.h"
-#include <WebSocketsServer.h>
+#include "config.h"
 
+#include <WebSocketsServer.h>
 
 WebSocketsServer webSocket = WebSocketsServer(81);
 Config config;
 WiFiMgr wifiMgr;
 WebUI webUI;
 UDPServer udp;
+IrServer irServer;
 
-// TODO использваоть girs_sendraw
-uint16_t irSendBuf[255]; // буфер для хранения RAW шаблона команды
-
-IRrecv irrecv(IR_RECV_PIN);
-IRsend irsend(IR_LED_PIN);
-decode_results results; // Буфер для хранения полученных ИК данных
-
-// Переменные для хранения последней полученной ИК-команды
-String lastIRCode = "Ожидание сигнала...";
-String lastIRProtocol = lastIRCode;
-String lastIRRaw = lastIRCode;
-bool isWaitingForIR = false; // Флаг для управления состоянием ИК-приемника
 
 void powerWatchDogTic();
-void doIrReceive();
 void btnTic();
 void notifyReceivedDataSetChanged();
-void handleUDP();
-
-String resultToRawArray(decode_results *results);
 
 void setup() {
   Serial.begin(115200);
@@ -71,8 +51,7 @@ void setup() {
   udp.begin(UDP_PORT);
   Serial.println("UDP запущен на порту " + String(UDP_PORT));
 
-  irrecv.enableIRIn(); // Инициализация ИК-приемника
-  irsend.begin();      // Инициализация ИК-передатчика
+  irServer.begin();
 
   girs_begin();
 
@@ -104,7 +83,7 @@ void loop() {
   yield();
 
   // Обработка ИК приемника
-  doIrReceive();
+  irServer.update();
   yield();
 
   // Обработка кнопок
@@ -118,22 +97,6 @@ void loop() {
   yield();
 }
 
-void doIrReceive() {
-  // Если включен режим ожидания ИК-сигнала
-  if (isWaitingForIR && irrecv.decode(&results)) {
-    lastIRCode = uint64ToString(results.value, HEX);
-    lastIRProtocol = typeToString(results.decode_type);
-    lastIRRaw = resultToRawArray(&results);
-    DEBUG_PRINTF("Получен ИК-код: %s, Протокол:  %s", lastIRCode,
-                 lastIRProtocol);
-    DEBUG_PRINTF("RAW данные: %s", lastIRRaw);
-    irrecv.pause();
-    isWaitingForIR = false;
-    notifyReceivedDataSetChanged();
-    digitalWrite(LED_PIN, HIGH);
-  }
-}
-
 void btnTic() {
   if (digitalRead(READY_TO_RECEIVE_BTN_PIN) == LOW) {
     readyToReceive();
@@ -143,34 +106,19 @@ void btnTic() {
 // Обработка кнопки "Сбросить и приготовиться"
 void readyToReceive() {
   // Сбрасываем последний ИК код
-  lastIRProtocol = lastIRCode = lastIRRaw = "Ожидание сигнала...";
+  irServer.resetLastIRData();
   notifyReceivedDataSetChanged();
-  isWaitingForIR = true;      // Включаем режим ожидания ИК-сигнала
-  irrecv.resume();            // Возобновляем работу приемника
+  irServer.enableReceiver();
   digitalWrite(LED_PIN, LOW); // Включаем светодиод (инвертировано)W
 }
 
 void notifyReceivedDataSetChanged() {
+  String lastIRCode = irServer.getLastIRData().hexcode;
+  String lastIRProtocol = irServer.getLastIRData().protocol;
+  String lastIRRaw = irServer.getLastIRData().raw;
   String jsonData = "{\"code\":\"" + lastIRCode + "\",\"protocol\":\"" +
                     lastIRProtocol + "\",\"raw\":\"" + lastIRRaw + "\"}";
   webSocket.broadcastTXT(jsonData);
-}
-
-// Функция для преобразования RAW данных в строку
-String resultToRawArray(decode_results *results) {
-  String rawData = "";
-  for (uint16_t i = 1; i < results->rawlen; i++) {
-    uint32_t usecs;
-    for (usecs = results->rawbuf[i] * kRawTick; usecs > UINT16_MAX;
-         usecs -= UINT16_MAX) {
-      rawData += uint64ToString(UINT16_MAX);
-      rawData += ",";
-    }
-    rawData += uint64ToString(usecs);
-    if (i < results->rawlen - 1)
-      rawData += ","; // Добавляем запятую, кроме последнего элемента
-  }
-  return rawData;
 }
 
 void powerWatchDogTic() {
