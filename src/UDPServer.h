@@ -11,7 +11,10 @@ class UDPServer {
   char udpBuffer[255];
 
 public:
-  void begin(uint16_t port) { udp.begin(port); }
+  void begin(uint16_t port) {
+    udp.begin(port);
+    Serial.println("UDP запущен на порту " + String(UDP_PORT));
+  }
 
   void update() {
     int packetSize = udp.parsePacket();

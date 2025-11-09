@@ -14,7 +14,6 @@ WebUI webUI;
 UDPServer udp;
 IrServer irServer;
 
-
 void powerWatchDogTic();
 void btnTic();
 void notifyReceivedDataSetChanged();
@@ -31,26 +30,10 @@ void setup() {
 
   config.begin();
   wifiMgr.begin();
-
-  // Инициализация mDNS
-  if (!MDNS.begin(HOSTNAME)) {
-    Serial.println("Ошибка настройки mDNS!");
-  } else {
-    MDNS.addService("http", "tcp", 80);
-    Serial.println("mDNS запущен, имя хоста: http://" + String(HOSTNAME) +
-                   ".local");
-  }
-
   webUI.begin();
-
-  // Запуск WebSocket
   webSocket.begin();
   Serial.println("WebSocket запущен");
-
-  // Запуск UDP
   udp.begin(UDP_PORT);
-  Serial.println("UDP запущен на порту " + String(UDP_PORT));
-
   irServer.begin();
 
   girs_begin();
@@ -76,10 +59,6 @@ void loop() {
 
   // Обработка входящих UDP-пакетов
   udp.update();
-  yield();
-
-  // Обновление mDNS
-  MDNS.update();
   yield();
 
   // Обработка ИК приемника

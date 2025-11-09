@@ -5,10 +5,6 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
 
-#ifndef IRHUB_CONFIG_H
-#include "config.h"
-#endif
-
 extern Config config;
 
 class WiFiMgr {
@@ -21,6 +17,15 @@ public:
     } else {
       startClientMode();
     }
+
+    // Инициализация mDNS
+    if (!MDNS.begin(HOSTNAME)) {
+      Serial.println("Ошибка настройки mDNS!");
+    } else {
+      MDNS.addService("http", "tcp", 80);
+      Serial.println("mDNS запущен, имя хоста: http://" + String(HOSTNAME) +
+                     ".local");
+    }
   }
 
   void uopdate() {
@@ -28,6 +33,8 @@ public:
     if (config.settings.isAPMode) {
       dnsServer.processNextRequest();
     }
+    // Обновление mDNS
+    MDNS.update();
   }
 
 private:
