@@ -14,6 +14,11 @@ IrServer irServer;
 WebSocketMgr webSocketMgr;
 GirsClient girsClient;
 
+#ifdef BT_HC06
+#include <SoftwareSerial.h>
+SoftwareSerial BTserial(BT_RX_PIN, BT_TX_PIN);
+#endif
+
 void powerWatchDogTic();
 void btnTic();
 
@@ -35,6 +40,12 @@ void setup() {
   udp.begin(UDP_PORT);
   irServer.begin();
   girsClient.begin();
+  girsClient.addStream(&Serial);
+
+#ifdef BT_HC06
+  BTserial.begin(9600); // Стандартная скорость HC-06
+  girsClient.addStream(&BTserial);
+#endif
 
   Serial.println("Загрузка завершена");
   Serial.println("Версия прошивки: " + String(FIRMWARE_VER));

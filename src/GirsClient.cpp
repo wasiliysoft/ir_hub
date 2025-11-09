@@ -1,10 +1,6 @@
 #include "GirsClient.h"
 
-#ifdef BT_HC06
-SoftwareSerial BTserial(BT_RX_PIN, BT_TX_PIN);
-#endif
-
-GirsClient* GirsClient::girsInstance = nullptr;
+GirsClient *GirsClient::girsInstance = nullptr;
 
 IRAM_ATTR void GirsClient::handleInterrupt() {
   const unsigned long currentTime = micros();
@@ -12,12 +8,13 @@ IRAM_ATTR void GirsClient::handleInterrupt() {
   g_lastIsrTime = currentTime;
   g_lastIsrTimeMs = millis();
 
+  // Простая логика в IRAM - только запись данных
   if (duration > 50 && g_pulseIndex < GIRS_BUFFER_SIZE) {
     g_durations[g_pulseIndex++] = duration;
   }
 }
 
-void GirsClient::handleInterruptStatic() {
+void IRAM_ATTR GirsClient::handleInterruptStatic() {
   if (girsInstance) {
     girsInstance->handleInterrupt();
   }
@@ -54,36 +51,49 @@ void GirsClient::girs_sendRaw(const uint16_t intro[], unsigned lengthIntro,
 }
 
 void GirsClient::girs_receive(Stream &stream) {
+  // Сброс состояния перед приемом
   g_pulseIndex = 0;
-  const unsigned long startTime = millis();
-  bool isReady = true;
   g_lastIsrTime = micros();
   g_lastIsrTimeMs = millis();
+
+  const unsigned long startTime = millis();
+  bool isReady = true;
+  bool isTimeout = false;
+
+  // Включение прерывания
   attachInterrupt(digitalPinToInterrupt(IR_RECV_PIN), handleInterruptStatic,
                   CHANGE);
-  bool isTimeout = false;
   digitalWrite(LED_PIN, LOW);
 
+  // Ждем данные
   while (isReady) {
     const unsigned long lastIsrEdge = millis() - g_lastIsrTimeMs;
+
+    // Условия выхода из цикла приема
     if (g_pulseIndex == 0 && (millis() - startTime) >= 5000) {
+      // Таймаут, если нет импульсов
       isReady = false;
       isTimeout = true;
     } else if (g_pulseIndex > 1 && lastIsrEdge > 1500L) {
+      // Завершение, если пауза между импульсами большая
       isReady = false;
     } else if (g_pulseIndex >= GIRS_BUFFER_SIZE) {
+      // Буфер заполнен
       isReady = false;
     }
     yield();
   }
 
+  // Выключение прерывания и индикации
   digitalWrite(LED_PIN, HIGH);
-  detachInterrupt(IR_RECV_PIN);
+  detachInterrupt(digitalPinToInterrupt(IR_RECV_PIN));
 
+  // Отправка результатов
   if (isTimeout) {
     stream.println('.');
   } else {
-    g_pulseIndex &= ~1;
+    // Обработка и отправка принятых данных
+    g_pulseIndex &= ~1; // Обеспечиваем четное количество
     for (uint16_t i = 1; i < g_pulseIndex; i++) {
       unsigned long duration = g_durations[i];
 #ifdef ROUND_TO_NEAREST_32
@@ -122,9 +132,10 @@ void GirsClient::girs_processCommand(const String &line, Stream &stream) {
     unsigned repeatLength = (unsigned)girs_getNextToken(cmdStr).toInt();
     unsigned endingLength = (unsigned)girs_getNextToken(cmdStr).toInt();
 
-    uint16_t intro[introLength];
-    uint16_t repeat[repeatLength];
-    uint16_t ending[endingLength];
+    // Используем динамическое выделение для больших массивов
+    uint16_t *intro = new uint16_t[introLength];
+    uint16_t *repeat = new uint16_t[repeatLength];
+    uint16_t *ending = new uint16_t[endingLength];
 
     for (unsigned i = 0; i < introLength; i++)
       intro[i] = (uint16_t)girs_getNextToken(cmdStr).toInt();
@@ -133,8 +144,14 @@ void GirsClient::girs_processCommand(const String &line, Stream &stream) {
     for (unsigned i = 0; i < endingLength; i++)
       ending[i] = (uint16_t)girs_getNextToken(cmdStr).toInt();
 
-    girs_sendRaw(intro, introLength, repeat, repeatLength, ending,
-                 endingLength, frequency, noSends);
+    girs_sendRaw(intro, introLength, repeat, repeatLength, ending, endingLength,
+                 frequency, noSends);
+
+    // Освобождаем память
+    delete[] intro;
+    delete[] repeat;
+    delete[] ending;
+
     yield();
     stream.println(F("OK"));
     yield();
@@ -148,30 +165,44 @@ void GirsClient::girs_processCommand(const String &line, Stream &stream) {
   }
 }
 
-GirsClient::GirsClient() {
-  girsInstance = this;
+GirsClient::GirsClient() { girsInstance = this; }
+
+void GirsClient::begin(Stream **streamArray, uint8_t count) {
+  pinMode(IR_RECV_PIN, INPUT_PULLUP);
+
+  // Инициализация массива потоков
+  if (streamArray && count > 0) {
+    streams = streamArray;
+    streamCount = count;
+  }
 }
 
-void GirsClient::begin() {
-  pinMode(IR_RECV_PIN, INPUT_PULLUP);
-#ifdef BT_HC06
-  BTserial.begin(9600); // Стандартная скорость HC-06
-#endif
+void GirsClient::addStream(Stream *stream) {
+  if (!streams) {
+    // Если массив не инициализирован, создаем его
+    streams = new Stream *[1];
+    streams[0] = stream;
+    streamCount = 1;
+  } else {
+    // Увеличиваем массив и добавляем новый поток
+    Stream **newStreams = new Stream *[streamCount + 1];
+    for (uint8_t i = 0; i < streamCount; i++) {
+      newStreams[i] = streams[i];
+    }
+    newStreams[streamCount] = stream;
+    delete[] streams;
+    streams = newStreams;
+    streamCount++;
+  }
 }
 
 void GirsClient::update() {
-  // Обработка последовательного порта
-  if (Serial.available()) {
-    String line = Serial.readStringUntil('\r');
-    girs_processCommand(line, Serial);
+  // Обработка всех потоков в массиве
+  for (uint8_t i = 0; i < streamCount; i++) {
+    if (streams[i] && streams[i]->available()) {
+      String line = streams[i]->readStringUntil('\r');
+      girs_processCommand(line, *streams[i]);
+    }
+    yield();
   }
-  yield();
-#ifdef BT_HC06
-  // Обработка Bluetooth
-  if (BTserial.available()) {
-    String line = BTserial.readStringUntil('\r');
-    girs_processCommand(line, BTserial);
-  }
-  yield();
-#endif
 }

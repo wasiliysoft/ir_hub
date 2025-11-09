@@ -5,10 +5,6 @@
 #include "config.h"
 #endif
 
-#ifdef BT_HC06
-#include <SoftwareSerial.h>
-#endif
-
 #ifndef IR_SERVER_H
 #include "IrServer.h"
 #endif
@@ -17,10 +13,6 @@ extern IrServer irServer;
 
 class GirsClient {
 private:
-#ifdef BT_HC06
-  SoftwareSerial BTserial{BT_RX_PIN, BT_TX_PIN};
-#endif
-  // Глобальные переменные для обработчика прерывания
   static const unsigned long DUMMYENDING = 40000U;
   static const uint16_t GIRS_BUFFER_SIZE = 512;
   volatile unsigned long g_lastIsrTime = 0;
@@ -29,12 +21,16 @@ private:
   volatile uint16_t g_pulseIndex = 0;
 
   static GirsClient *girsInstance;
+  
+  // Массив потоков для обработки
+  Stream** streams = nullptr;
+  uint8_t streamCount = 0;
 
-  // Обработчик прерывания
+  // Обработчик прерывания - должен быть в IRAM
   IRAM_ATTR void handleInterrupt();
 
-  // Статический метод-обертка
-  static void handleInterruptStatic();
+  // Статический метод-обертка - должен быть в IRAM
+  static void IRAM_ATTR handleInterruptStatic();
 
   // Преобразование Гц в кГц
   static inline unsigned hz2khz(uint16_t hz) { return (hz + 500) / 1000; }
@@ -61,7 +57,13 @@ private:
 
 public:
   GirsClient();
-  void begin();
+  
+  // Инициализация с массивом потоков
+  void begin(Stream** streamArray = nullptr, uint8_t count = 0);
+  
+  // Добавление потока динамически
+  void addStream(Stream* stream);
+  
   void update();
 };
 
