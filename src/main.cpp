@@ -1,7 +1,6 @@
 #include "GirsClient.h"
 #include "IrServer.h"
-#include "UDPServer.h"
-#include "WebServer.h"
+#include "WebServerMgr.h"
 #include "WebSocketMgr.h"
 #include "WiFiMgr.h"
 #include "config.h"

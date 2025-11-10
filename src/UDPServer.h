@@ -1,7 +1,12 @@
 #ifndef UDP_SERVER_H
 #define UDP_SERVER_H
 
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
+#else
+#include "WiFi.h"
+#endif
+
 #include <WiFiUdp.h>
 
 extern IrServer irServer;
@@ -38,7 +43,7 @@ public:
     if (strcmp(udpBuffer, "IRHUB_ECHO") == 0) {
       String macAddress = WiFi.macAddress();
       udp.beginPacket(udp.remoteIP(), udp.remotePort());
-      udp.write(macAddress.c_str(), macAddress.length());
+      udp.write((uint8_t *)macAddress.c_str(), macAddress.length());
       udp.endPacket();
       DEBUG_PRINTF("Отправлен MAC-адрес: %s на IP: %s", macAddress.c_str(),
                    udp.remoteIP().toString().c_str());

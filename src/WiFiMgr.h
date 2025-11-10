@@ -1,9 +1,15 @@
 #ifndef WIFI_MANAGER_H
 #define WIFI_MANAGER_H
 
-#include <DNSServer.h>
+#ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <ESP8266mDNS.h>
+#else
+#include <ESPmDNS.h>
+#include <WiFi.h>
+#endif
+
+#include <DNSServer.h>
 
 extern ConfigMgr config;
 
@@ -33,8 +39,12 @@ public:
     if (config.settings.isAPMode) {
       dnsServer.processNextRequest();
     }
-    // Обновление mDNS
+// Обновление mDNS
+#ifdef ESP8266
     MDNS.update();
+#else
+
+#endif
   }
 
 private:

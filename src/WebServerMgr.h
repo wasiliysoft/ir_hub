@@ -1,5 +1,5 @@
-#ifndef WEB_SERVER_H
-#define WEB_SERVER_H
+#ifndef WEB_SERVER_MGR_H
+#define WEB_SERVER_MGR_H
 
 #ifndef UDP_SERVER_H
 #include "UDPServer.h"
@@ -8,9 +8,17 @@
 #include "IrServer.h"
 #endif
 
-#include <ArduinoJson.h>
+#ifdef ESP8266
 #include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
+#else
+#include "WebServer.h"
+#include <HTTPUpdateServer.h>
+
+#endif
+
+#include <ArduinoJson.h>
+
 #include <LittleFS.h> // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
 
 extern ConfigMgr config;
@@ -19,8 +27,13 @@ extern void readyToReceive();
 
 class WebUI {
 private:
+#ifdef ESP8266
   ESP8266WebServer server;
   ESP8266HTTPUpdateServer httpUpdater;
+#else
+  WebServer server;
+  HTTPUpdateServer httpUpdater;
+#endif
 
 public:
   WebUI() : server(80) {}
@@ -30,6 +43,7 @@ public:
 
     // Настройка маршрутов веб-сервера
     httpUpdater.setup(&server); // OTA url /update
+
     server.onNotFound([this]() {
       if (!LittleFS.exists("/index.html")) {
         Serial.println("Файловая система не найдена!");
@@ -79,7 +93,7 @@ private:
     // Добавляем новые поля
     doc["local_ip"] = WiFi.localIP().toString();
     doc["mac_address"] = WiFi.macAddress();
-    doc["hostname"] = WiFi.hostname();
+    doc["hostname"] = WiFi.getHostname();
     // doc["subnet_mask"] = WiFi.subnetMask().toString();
     // doc["gateway_ip"] = WiFi.gatewayIP().toString();
     // doc["dns_ip"] = WiFi.dnsIP().toString();
@@ -123,7 +137,7 @@ private:
     config.commit();
     Serial.println("Перезагрузка...");
     delay(2000);
-    ESP.reset();
+    ESP.restart();
   }
 
   void handleAPI_scan_network() {
