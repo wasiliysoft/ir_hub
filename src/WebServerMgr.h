@@ -56,6 +56,21 @@ public:
       }
       server.send(302, "text/plain", "Redirecting");
     });
+
+    server.on("/", [this]() {
+      // Пробуем в нужном нам порядке:
+      if (LittleFS.exists("/index.html")) {
+        File file = LittleFS.open("/index.html", "r");
+        server.streamFile(file, "text/html");
+        file.close();
+        return;
+      } 
+      // Если нет индексных файлов - редирект на update
+      server.sendHeader("Location", "/update");
+      server.send(302, "text/plain", "Redirecting");
+    });
+
+    // Настройка маршрутов веб-сервера
     server.on("/api/v1/last-received-data", HTTP_GET,
               [this]() { this->handleAPI_last_received_data(); });
     server.on("/api/v1/scan-network", HTTP_GET,
