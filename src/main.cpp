@@ -7,10 +7,10 @@
 
 ConfigMgr config;
 WiFiMgr wifiMgr;
-WebUI webUI;
-UDPServer udp;
-IrServer irServer;
 WebSocketMgr webSocketMgr;
+IrServer irServer;
+UDPServer udp;
+WebUI webUI;
 GirsClient girsClient;
 
 #ifdef BT_HC06
@@ -33,11 +33,10 @@ void setup() {
 
   config.begin();
   wifiMgr.begin();
-  webUI.begin();
   webSocketMgr.begin();
-  Serial.println("WebSocket запущен");
-  udp.begin(UDP_PORT);
   irServer.begin();
+  udp.begin(UDP_PORT);
+  webUI.begin();
   girsClient.begin();
   girsClient.addStream(&Serial);
 
@@ -46,7 +45,6 @@ void setup() {
   girsClient.addStream(&BTserial);
 #endif
 
-  Serial.println("Загрузка завершена");
   Serial.println("Версия прошивки: " + String(FIRMWARE_VER));
   Serial.println("setup section complete");
   digitalWrite(LED_PIN, HIGH); // Выключаем светодиод
