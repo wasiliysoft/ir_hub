@@ -13,7 +13,7 @@
 #include <ESP8266WebServer.h>
 #else
 #include "WebServer.h"
-#include <HTTPUpdateServer.h>
+#include <ESP32HTTPUpdateServer.h>
 
 #endif
 
@@ -32,7 +32,7 @@ private:
   ESP8266HTTPUpdateServer httpUpdater;
 #else
   WebServer server;
-  HTTPUpdateServer httpUpdater;
+  esp32httpupdateserver_ns::ESP32HTTPUpdateServer httpUpdater;
 #endif
 
 public:
