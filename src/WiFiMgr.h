@@ -18,6 +18,11 @@ class WiFiMgr {
 
 public:
   void begin() {
+#if defined(CONFIG_IDF_TARGET_ESP32C3)
+    // Установка мощности передатчика WiFi
+    // https://github.com/sigmdel/supermini_esp32c3_sketches?tab=readme-ov-file#05_wifi_tx_power
+    WiFi.setTxPower(WIFI_POWER_11dBm);
+#endif
     if (config.settings.isAPMode) {
       startAPMode();
     } else {
