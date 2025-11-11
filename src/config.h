@@ -46,8 +46,7 @@ class ConfigMgr {
 public:
   // Инициализация EEPROM и загрузка настроек
   void begin() {
-    // EEPROM.begin(sizeof(Settings));
-    EEPROM.begin(1023);
+    EEPROM.begin(4096); // https://alexgyver.ru/lessons/eeprom/#3-toc-title
     load();
     Serial.println("ConfigMgr started");
   }
