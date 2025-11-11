@@ -175,6 +175,7 @@ void GirsClient::begin(Stream **streamArray, uint8_t count) {
     streams = streamArray;
     streamCount = count;
   }
+  Serial.println("GirsClient started");
 }
 
 void GirsClient::addStream(Stream *stream) {

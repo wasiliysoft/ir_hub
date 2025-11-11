@@ -18,7 +18,7 @@ class UDPServer {
 public:
   void begin(uint16_t port) {
     udp.begin(port);
-    Serial.println("UDP запущен на порту " + String(UDP_PORT));
+    Serial.println("UDPServer started on port " + String(UDP_PORT));
   }
 
   void update() {

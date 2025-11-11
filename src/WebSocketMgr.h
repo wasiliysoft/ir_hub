@@ -11,7 +11,10 @@ private:
   WebSocketsServer webSocket = WebSocketsServer(81);
 
 public:
-  void begin() { webSocket.begin(); }
+  void begin() {
+    webSocket.begin();
+    Serial.println("WebSocketMgr started");
+  }
   void update() { webSocket.loop(); }
 
   void notifyReceivedDataSetChanged(const IRData irData) {

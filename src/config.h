@@ -49,6 +49,7 @@ public:
     // EEPROM.begin(sizeof(Settings));
     EEPROM.begin(1023);
     load();
+    Serial.println("ConfigMgr started");
   }
   // Структура для хранения настроек
   struct Settings {
@@ -61,7 +62,9 @@ public:
   void commit() {
     EEPROM.put(0, settings);
     EEPROM.commit();
+    Serial.println("EEPROM commit complete");
   }
+
   void setDefaultSettings() {
     strcpy(settings.ssid, SSID_DEFAULT);
     strcpy(settings.password, "");

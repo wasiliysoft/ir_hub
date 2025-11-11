@@ -32,6 +32,7 @@ public:
       Serial.println("mDNS запущен, имя хоста: http://" + String(HOSTNAME) +
                      ".local");
     }
+    Serial.println("WiFiMgr started");
   }
 
   void uopdate() {

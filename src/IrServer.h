@@ -47,6 +47,7 @@ public:
   void begin() {
     recv.enableIRIn(); // Инициализация ИК-приемника
     send.begin();      // Инициализация ИК-передатчика
+    Serial.println("IrServer started");
   }
   void update() {
     // Если включен режим ожидания ИК-сигнала

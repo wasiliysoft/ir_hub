@@ -39,10 +39,13 @@ public:
   WebUI() : server(80) {}
 
   void begin() {
-    LittleFS.begin();
-
-    // Настройка маршрутов веб-сервера
     httpUpdater.setup(&server); // OTA url /update
+
+    if (LittleFS.begin()) {
+      Serial.println("Filesystem in WebUI started");
+    } else {
+      Serial.println("ERROR: Filesystem in WebUI start failed");
+    }
 
     server.onNotFound([this]() {
       if (!LittleFS.exists("/index.html")) {
@@ -68,7 +71,7 @@ public:
     server.serveStatic("/", LittleFS, "/",
                        "max-age=86400"); // 1 сутки = 24 * 3600 = 86400
     server.begin();                      // Запуск веб-сервера
-    Serial.println("Web-server started");
+    Serial.println("WebUI started");
   }
   void update() { server.handleClient(); }
 

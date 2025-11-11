@@ -48,6 +48,7 @@ void setup() {
 
   Serial.println("Загрузка завершена");
   Serial.println("Версия прошивки: " + String(FIRMWARE_VER));
+  Serial.println("setup section complete");
   digitalWrite(LED_PIN, HIGH); // Выключаем светодиод
 }
 
