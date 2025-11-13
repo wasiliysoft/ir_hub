@@ -22,15 +22,17 @@ void powerWatchDogTic();
 void btnTic();
 
 void setup() {
-  Serial.begin(115200);
   pinMode(LED_PIN, OUTPUT);
-  digitalWrite(LED_PIN, LOW); // Включаем светодиод при старте
+  digitalWrite(LED_PIN, LOW);  // Светодиод включён при старте (активный низкий уровень)
   pinMode(READY_TO_RECEIVE_BTN_PIN, INPUT_PULLUP);
   pinMode(POWER_WATCH_DOG_PIN, OUTPUT);
-  delay(500);
-  Serial.println();
-  Serial.println();
 
+  Serial.begin(115200);
+  while (!Serial);  // Ждём готовности Serial (полезно для отладки)
+  delay(500);
+  Serial.println("\n\n");
+
+  // Инициализация компонентов
   config.begin();
   wifiMgr.begin();
   webSocketMgr.begin();
@@ -41,13 +43,13 @@ void setup() {
   girsClient.addStream(&Serial);
 
 #ifdef BT_HC06
-  BTserial.begin(9600); // Стандартная скорость HC-06
+  BTserial.begin(9600);
   girsClient.addStream(&BTserial);
 #endif
 
-  Serial.println("Версия прошивки: " + String(FIRMWARE_VER));
-  Serial.println("setup section complete");
-  digitalWrite(LED_PIN, HIGH); // Выключаем светодиод
+  Serial.println("FIRMWARE_VER: " FIRMWARE_VER);
+  Serial.println("setup: complete");
+  digitalWrite(LED_PIN, HIGH);  // Выключаем светодиод после инициализации
 }
 
 void loop() {
@@ -58,22 +60,18 @@ void loop() {
   **/
   delay(1);
 
-  wifiMgr.uopdate();
+  wifiMgr.update();
   yield();
 
-  // Обработка событий WebSocket
   webSocketMgr.update();
   yield();
 
-  // Обработка входящих UDP-пакетов
   udp.update();
   yield();
 
-  // Обработка ИК приемника
   irServer.update();
   yield();
 
-  // Обработка кнопок
   btnTic();
   yield();
 
@@ -92,25 +90,24 @@ void btnTic() {
   }
 }
 
-// Обработка кнопки "Сбросить и приготовиться"
 void readyToReceive() {
-  // Сбрасываем последний ИК код
   irServer.resetLastIRData();
   webSocketMgr.notifyReceivedDataSetChanged(irServer.getLastIRData());
   irServer.enableReceiver();
-  digitalWrite(LED_PIN, LOW); // Включаем светодиод (инвертировано)W
+  digitalWrite(LED_PIN, LOW);  // Включаем светодиод (инвертировано)
 }
 
 void powerWatchDogTic() {
   static enum { IDLE, PULSE_LOW } state = IDLE;
-  static uint32_t lastTime =
-      0; // вызывается только при инициализации переменной
+  static uint32_t lastTime = 0;
+  const uint32_t IDLE_INTERVAL = 5000;  // Интервал между импульсами (5 сек)
+  const uint32_t PULSE_DURATION = 50;   // Длительность низкого уровня (50 мс)
 
   uint32_t currentTime = millis();
 
   switch (state) {
   case IDLE:
-    if (currentTime - lastTime >= 5000) {
+    if (currentTime - lastTime >= IDLE_INTERVAL) {
       digitalWrite(POWER_WATCH_DOG_PIN, LOW);
       lastTime = currentTime;
       state = PULSE_LOW;
@@ -118,7 +115,7 @@ void powerWatchDogTic() {
     break;
 
   case PULSE_LOW:
-    if (currentTime - lastTime >= 50) {
+    if (currentTime - lastTime >= PULSE_DURATION) {
       digitalWrite(POWER_WATCH_DOG_PIN, HIGH);
       state = IDLE;
     }

@@ -40,7 +40,7 @@ public:
     Serial.println("WiFiMgr started");
   }
 
-  void uopdate() {
+  void update() {
     // Обработка DNS-запросов в режиме точки доступа
     if (config.settings.isAPMode) {
       dnsServer.processNextRequest();
