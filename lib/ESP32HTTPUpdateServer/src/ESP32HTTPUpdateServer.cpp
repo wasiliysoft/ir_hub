@@ -1,4 +1,5 @@
 // ESP32HTTPUpdateServer.cpp
+#ifndef ESP8266
 #include "ESP32HTTPUpdateServer.h"
 #include <Arduino.h>
 #include <LittleFS.h>
@@ -159,3 +160,4 @@ void ESP32HTTPUpdateServer::_setUpdaterError() {
 }
 
 } // namespace esp32httpupdateserver_ns
+#endif
