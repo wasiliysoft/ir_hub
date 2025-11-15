@@ -13,8 +13,8 @@
 // Пин для поддержания ВКЛ состояния на модуле питания
 #define POWER_WATCH_DOG_PIN D5
 
-#define BT_RX_PIN D6 // подключен к TX HC-06
-#define BT_TX_PIN D7 // подключен к RX HC-06
+#define BT_RX_PIN D6  // подключен к TX HC-06
+#define BT_TX_PIN D7  // подключен к RX HC-06
 
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
 // Пин для ИК светодиода
@@ -29,16 +29,20 @@
 #define POWER_WATCH_DOG_PIN GPIO_NUM_5
 
 #elif defined(CONFIG_IDF_TARGET_ESP32)
-// Пин для ИК светодиода
-#define IR_LED_PIN GPIO_NUM_2
-// Пин, к которому подключен ИК-приемник
-#define IR_RECV_PIN GPIO_NUM_3
-// Пин для кнопки "Сброс и приготовиться"
-#define READY_TO_RECEIVE_BTN_PIN GPIO_NUM_4
+// Без каких-либо ограничений в качестве входов и выходов в ESP32 DevKit V1 можно использовать следующие 12 выводов GPIO:
+// 16, 17, 18, 19, 21, 22, 23, 25, 26, 27, 32, 33.
+// https://myrobot.ru/wiki/index.php?n=Experiences.Esp32Pinout
+
 // Пин для светодиода
 #define LED_PIN GPIO_NUM_2
+// Пин для ИК светодиода
+#define IR_LED_PIN GPIO_NUM_18
+// Пин, к которому подключен ИК-приемник
+#define IR_RECV_PIN GPIO_NUM_19
+// Пин для кнопки "Сброс и приготовиться"
+#define READY_TO_RECEIVE_BTN_PIN GPIO_NUM_21
 // Пин для поддержания ВКЛ состояния на модуле питания
-#define POWER_WATCH_DOG_PIN GPIO_NUM_5
+#define POWER_WATCH_DOG_PIN GPIO_NUM_23
 #endif
 
 #endif
