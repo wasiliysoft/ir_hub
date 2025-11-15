@@ -13,10 +13,19 @@ UDPServer udp;
 WebUI webUI;
 GirsClient girsClient;
 
-#ifdef BT_HC06
+#if defined(ESP8266)
 #include <SoftwareSerial.h>
-SoftwareSerial BTserial(BT_RX_PIN, BT_TX_PIN);
+SoftwareSerial btSerial(BT_RX_PIN, BT_TX_PIN);
+#elif defined(CONFIG_IDF_TARGET_ESP32)
+#include <BluetoothSerial.h>
+BluetoothSerial btSerial;
+// #include "BLESerial/BLESerial.h"
+// BLESerial btSerial;
+#elif defined(CONFIG_IDF_TARGET_ESP32C3)
+#include "BLESerial/BLESerial.h"
+BLESerial btSerial;
 #endif
+
 
 void powerWatchDogTic();
 void btnTic();
@@ -42,9 +51,12 @@ void setup() {
   girsClient.begin();
   girsClient.addStream(&Serial);
 
-#ifdef BT_HC06
-  BTserial.begin(9600);
-  girsClient.addStream(&BTserial);
+#if defined(ESP8266)
+  btSerial.begin(9600);
+  girsClient.addStream(&btSerial);
+#elif defined(ESP32)
+  btSerial.begin(config.getUniqueHostname());
+  girsClient.addStream(&btSerial);
 #endif
 
   Serial.println("FIRMWARE_VER: " FIRMWARE_VER);
@@ -86,7 +98,12 @@ void btnTic() {
   // TODO FIXME при использовании IrScrutinizer он постоянно шлет Сигнал DTR в
   // Serial, это приводит к тому что pin D3 на NodeMCU переходит в состояние LOW
   if (digitalRead(READY_TO_RECEIVE_BTN_PIN) == LOW) {
+#ifdef ESP32
+    readyToReceive();
+#endif
+#ifdef ESP8266
     // readyToReceive();
+#endif
   }
 }
 

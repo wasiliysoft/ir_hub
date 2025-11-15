@@ -12,10 +12,10 @@
 #define SSID_DEFAULT "AutoConnectAP"
 #define HOSTNAME "irhub"
 
-#define UDP_PORT 55531 // Порт для широковещательного UDP
+#define UDP_PORT 55531  // Порт для широковещательного UDP
 
-#define INIT_ADDR 1023 // номер ячейки для хранения клоюча первого запуска
-#define INIT_KEY 53    // ключ первого запуска. 0-254, на выбор
+#define INIT_ADDR 1023  // номер ячейки для хранения клоюча первого запуска
+#define INIT_KEY 53     // ключ первого запуска. 0-254, на выбор
 
 // Макросы
 #ifdef DEBUG
@@ -38,7 +38,7 @@ class ConfigMgr {
 public:
   // Инициализация EEPROM и загрузка настроек
   void begin() {
-    EEPROM.begin(4096); // https://alexgyver.ru/lessons/eeprom/#3-toc-title
+    EEPROM.begin(4096);  // https://alexgyver.ru/lessons/eeprom/#3-toc-title
     load();
     Serial.println("ConfigMgr started");
   }
@@ -62,15 +62,27 @@ public:
     settings.isAPMode = true;
   }
 
+
+  char* getUniqueHostname() {
+#ifdef ESP8266
+    uint16_t id = (uint16_t)(ESP.getChipId());
+#else
+    uint16_t id = (uint16_t)(ESP.getEfuseMac());
+#endif
+    static char buffer[sizeof(HOSTNAME) + 1 + 4];
+    sprintf(buffer, HOSTNAME "_%04x", id);
+    return buffer;
+  }
+
 private:
   // Загружает настройки из EEPROM и выполняет валидацию
   void load() {
-    if (EEPROM.read(INIT_ADDR) != INIT_KEY) { // первый запуск
-      delay(5000);
+    if (EEPROM.read(INIT_ADDR) != INIT_KEY) {  // первый запуск
+      delay(1000);
       Serial.println("Первый запуск");
       Serial.println("Первый запуск");
       Serial.println("Первый запуск");
-      EEPROM.write(INIT_ADDR, INIT_KEY); // записали ключ
+      EEPROM.write(INIT_ADDR, INIT_KEY);  // записали ключ
       setDefaultSettings();
       commit();
     } else {
