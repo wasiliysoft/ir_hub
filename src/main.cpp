@@ -17,8 +17,9 @@ GirsClient girsClient;
 #include <SoftwareSerial.h>
 SoftwareSerial btSerial(BT_RX_PIN, BT_TX_PIN);
 #elif defined(CONFIG_IDF_TARGET_ESP32)
-#include <BluetoothSerial.h>
-BluetoothSerial btSerial;
+// FIXME включение BluetoothSerial вешает плату, перестает отвечать на запросы
+// #include <BluetoothSerial.h>
+// BluetoothSerial btSerial;
 // #include "BLESerial/BLESerial.h"
 // BLESerial btSerial;
 #elif defined(CONFIG_IDF_TARGET_ESP32C3)
@@ -55,8 +56,9 @@ void setup() {
   btSerial.begin(9600);
   girsClient.addStream(&btSerial);
 #elif defined(ESP32)
-  btSerial.begin(config.getUniqueHostname());
-  girsClient.addStream(&btSerial);
+// FIXME включение BluetoothSerial вешает плату, перестает отвечать на запросы
+// btSerial.begin(config.getUniqueHostname());
+// girsClient.addStream(&btSerial);
 #endif
 
   Serial.println("FIRMWARE_VER: " FIRMWARE_VER);
