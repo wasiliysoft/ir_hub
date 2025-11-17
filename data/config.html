@@ -87,7 +87,7 @@
                     <p class="fs-5" id="mac_address"></p>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Имя хоста:</label>
+                    <label class="form-label">Уникальный url-адрес чипа:</label>
                     <p class="fs-5" id="hostname"></p>
                 </div>
                 <div class="mb-3">
@@ -145,7 +145,7 @@
             document.getElementById('fw_ver_name').textContent = data.fw_ver_name;
             document.getElementById('local_ip').textContent = data.local_ip;
             document.getElementById('mac_address').textContent = data.mac_address;
-            document.getElementById('hostname').textContent = data.hostname;
+            document.getElementById('hostname').textContent = "http://" + data.hostname.toLowerCase();
             document.getElementById('rssi').textContent = data.rssi;
             // Проверяем наличие имени сети в запросе
             let ext_ssid = get("ssid");
