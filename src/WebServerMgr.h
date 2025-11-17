@@ -9,17 +9,14 @@
 #endif
 
 #ifdef ESP8266
-#include <ESP8266HTTPUpdateServer.h>
 #include <ESP8266WebServer.h>
+using WebServer ESP8266WebServer;
 #else
 #include "WebServer.h"
-#include <ESP32HTTPUpdateServer.h>
-
 #endif
 
 #include <ArduinoJson.h>
-
-#include <LittleFS.h> // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
+#include <LittleFS.h>  // https://randomnerdtutorials.com/arduino-ide-2-install-esp8266-littlefs/#installing-windows
 
 extern ConfigMgr config;
 extern UDPServer udp;
@@ -27,20 +24,12 @@ extern void readyToReceive();
 
 class WebUI {
 private:
-#ifdef ESP8266
-  ESP8266WebServer server;
-  ESP8266HTTPUpdateServer httpUpdater;
-#else
   WebServer server;
-  esp32httpupdateserver_ns::ESP32HTTPUpdateServer httpUpdater;
-#endif
 
 public:
   WebUI() : server(80) {}
 
   void begin() {
-    httpUpdater.setup(&server); // OTA url /update
-
     if (LittleFS.begin()) {
       Serial.println("Filesystem in WebUI started");
     } else {
@@ -48,46 +37,36 @@ public:
     }
 
     server.onNotFound([this]() {
-      if (!LittleFS.exists("/index.html")) {
-        Serial.println("Файловая система не найдена!");
-        server.sendHeader("Location", "/update");
-      } else {
-        server.sendHeader("Location", "/");
-      }
+      server.sendHeader("Location", "/");
       server.send(302, "text/plain", "Redirecting");
     });
 
     server.on("/", [this]() {
-      // Пробуем в нужном нам порядке:
+      // FIX для ESP32, потому что WebServer на ESP32 поумолчанию пытается открыть
+      // index.htm, а не index.html
       if (LittleFS.exists("/index.html")) {
         File file = LittleFS.open("/index.html", "r");
         server.streamFile(file, "text/html");
         file.close();
-        return;
-      } 
-      // Если нет индексных файлов - редирект на update
-      server.sendHeader("Location", "/update");
-      server.send(302, "text/plain", "Redirecting");
+      } else {
+        server.send(200, "text/plain", "Filesystem not found, need flash filesystem.bin on any");
+      }
     });
 
-    // Настройка маршрутов веб-сервера
-    server.on("/api/v1/last-received-data", HTTP_GET,
-              [this]() { this->handleAPI_last_received_data(); });
-    server.on("/api/v1/scan-network", HTTP_GET,
-              [this]() { this->handleAPI_scan_network(); });
-    server.on("/api/v1/config-read", HTTP_GET,
-              [this] { this->handleAPI_config_read(); });
-    server.on("/api/v1/config-write", HTTP_POST,
-              [this] { this->handleAPI_config_write(); });
-    server.on("/api/v1/config-erase", HTTP_GET,
-              [this] { this->handleAPI_config_erase(); });
+    // Настройка маршрутов веб-сервера для путей вне файловой системы
+    server.on("/api/v1/last-received-data", HTTP_GET, [this]() { this->handleAPI_last_received_data(); });
+    server.on("/api/v1/scan-network", HTTP_GET, [this]() { this->handleAPI_scan_network(); });
+    server.on("/api/v1/config-read", HTTP_GET, [this] { this->handleAPI_config_read(); });
+    server.on("/api/v1/config-write", HTTP_POST, [this] { this->handleAPI_config_write(); });
+    server.on("/api/v1/config-erase", HTTP_GET, [this] { this->handleAPI_config_erase(); });
     server.on("/reset", HTTP_GET, [this] { this->handleReset(); });
     server.on("/sendIr/", HTTP_POST, [this] { this->handleSendRaw(); });
     server.serveStatic("/", LittleFS, "/",
-                       "max-age=86400"); // 1 сутки = 24 * 3600 = 86400
-    server.begin();                      // Запуск веб-сервера
+                       "max-age=86400");  // 1 сутки = 24 * 3600 = 86400
+    server.begin();                       // Запуск веб-сервера
     Serial.println("WebUI started");
   }
+
   void update() { server.handleClient(); }
 
 private:
@@ -125,10 +104,8 @@ private:
   void handleAPI_config_write() {
     if (server.method() == HTTP_POST) {
       config.settings.isAPMode = server.arg("mode").toInt() == 1;
-      strncpy(config.settings.ssid, server.arg("ssid").c_str(),
-              sizeof(config.settings.ssid));
-      strncpy(config.settings.password, server.arg("password").c_str(),
-              sizeof(config.settings.password));
+      strncpy(config.settings.ssid, server.arg("ssid").c_str(), sizeof(config.settings.ssid));
+      strncpy(config.settings.password, server.arg("password").c_str(), sizeof(config.settings.password));
       config.commit();
 
       JsonDocument doc;
@@ -186,7 +163,7 @@ private:
     int pulses = 0;
     int startIndex = 0;
 
-    uint16_t irSendBuf[255]; // буфер для хранения RAW шаблона команды
+    uint16_t irSendBuf[255];  // буфер для хранения RAW шаблона команды
 
     for (unsigned int i = 0; i <= pattern.length(); i++) {
       if (i == pattern.length() || pattern.charAt(i) == ',') {

@@ -4,11 +4,10 @@
 #include <EEPROM.h>
 
 // #define DEBUG     // Раскомментировать для включения отладочных сообщений
-// #define BT_HC06   // Раскомментировать для включения BT_HC06 на плате esp8266
 
 #include "config_pin.h"
 
-#define FIRMWARE_VER "v2.6.0 (2025.05.29)"
+#define FIRMWARE_VER "v2.7.0 (" __DATE__ " " __TIME__ ")"
 #define SSID_DEFAULT "AutoConnectAP"
 #define HOSTNAME "irhub"
 
