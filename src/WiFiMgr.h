@@ -44,11 +44,8 @@ public:
     if (config.isAPMode()) {
       dnsServer.processNextRequest();
     }
-// Обновление mDNS
 #ifdef ESP8266
     MDNS.update();
-#else
-
 #endif
   }
 

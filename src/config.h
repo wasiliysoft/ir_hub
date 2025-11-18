@@ -3,6 +3,13 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 
+#ifdef ESP8266
+#include <ESP8266WiFi.h>
+#else
+#include <WiFi.h>
+#endif
+
+
 // #define DEBUG     // Раскомментировать для включения отладочных сообщений
 // #define BT_HC06   // Раскомментировать для включения BT_HC06 на плате esp8266
 
@@ -68,14 +75,15 @@ public:
   }
 
 
-  char* getUniqueHostname() {
+  static char* getUniqueHostname() {
+    uint8_t mac[6];
 #ifdef ESP8266
-    uint16_t id = (uint16_t)(ESP.getChipId());
+    WiFi.macAddress(mac);
 #else
-    uint16_t id = (uint16_t)(ESP.getEfuseMac());
+    esp_read_mac(mac, ESP_MAC_WIFI_STA);
 #endif
     static char buffer[sizeof(HOSTNAME) + 1 + 4];
-    sprintf(buffer, HOSTNAME "_%04x", id);
+    sprintf(buffer, HOSTNAME "_%02x%02x", mac[4], mac[5]);
     return buffer;
   }
 
