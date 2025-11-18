@@ -83,9 +83,9 @@ private:
 
   void handleAPI_config_read() {
     JsonDocument doc;
-    doc["w_ssid"] = config.settings.ssid;
-    doc["w_pass"] = config.settings.password;
-    doc["w_ap"] = config.settings.isAPMode;
+    doc["w_ssid"] = config.getSsid();
+    doc["w_pass"] = config.getPassword();
+    doc["w_ap"] = config.isAPMode();
     doc["fw_ver_name"] = FIRMWARE_VER;
     // Добавляем новые поля
     doc["local_ip"] = WiFi.localIP().toString();
@@ -103,9 +103,10 @@ private:
 
   void handleAPI_config_write() {
     if (server.method() == HTTP_POST) {
-      config.settings.isAPMode = server.arg("mode").toInt() == 1;
-      strncpy(config.settings.ssid, server.arg("ssid").c_str(), sizeof(config.settings.ssid));
-      strncpy(config.settings.password, server.arg("password").c_str(), sizeof(config.settings.password));
+      const char* ssid = server.arg("ssid").c_str();
+      const char* password = server.arg("password").c_str();
+      bool isAPMode = server.arg("mode").toInt() == 1;
+      config.setWifiSettings(ssid, password, isAPMode);
       config.commit();
 
       JsonDocument doc;

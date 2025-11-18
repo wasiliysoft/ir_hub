@@ -4,11 +4,11 @@
 #include <EEPROM.h>
 
 // #define DEBUG     // Раскомментировать для включения отладочных сообщений
+// #define BT_HC06   // Раскомментировать для включения BT_HC06 на плате esp8266
 
 #include "config_pin.h"
 
 #define FIRMWARE_VER "v2.7.0 (" __DATE__ " " __TIME__ ")"
-#define SSID_DEFAULT "AutoConnectAP"
 #define HOSTNAME "irhub"
 
 #define UDP_PORT 55531  // Порт для широковещательного UDP
@@ -41,12 +41,18 @@ public:
     load();
     Serial.println("ConfigMgr started");
   }
-  // Структура для хранения настроек
-  struct Settings {
-    char ssid[32];
-    char password[64];
-    bool isAPMode;
-  } settings;
+
+  char* getSsid() { return settings.ssid; }
+  char* getPassword() { return settings.password; }
+  bool isAPMode() { return settings.isAPMode; }
+
+  void setWifiSettings(const char* ssid, const char* password, const bool isAPMode) {
+    if (ssid != nullptr && password != nullptr) {
+      strlcpy(settings.ssid, ssid, sizeof(settings.ssid));
+      strlcpy(settings.password, password, sizeof(settings.password));
+      settings.isAPMode = isAPMode;
+    }
+  }
 
   // Сохраняет настройки в EEPROM
   void commit() {
@@ -56,7 +62,7 @@ public:
   }
 
   void setDefaultSettings() {
-    strcpy(settings.ssid, SSID_DEFAULT);
+    strlcpy(settings.ssid, getUniqueHostname(), sizeof(settings.ssid));
     strcpy(settings.password, "");
     settings.isAPMode = true;
   }
@@ -74,6 +80,12 @@ public:
   }
 
 private:
+  struct Settings {
+    char ssid[32];
+    char password[64];
+    bool isAPMode;
+  } settings;
+
   // Загружает настройки из EEPROM и выполняет валидацию
   void load() {
     if (EEPROM.read(INIT_ADDR) != INIT_KEY) {  // первый запуск
