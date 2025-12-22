@@ -3,6 +3,9 @@ import subprocess
 import sys
 from pathlib import Path
 
+# If error No module named esptool
+# C:\Users\WasiliySoft\.platformio\penv\Scripts\python.exe -m pip install esptool
+
 def debug_env():
     """Вывод всех переменных окружения"""
     print("🔍 Все переменные окружения PlatformIO:")
