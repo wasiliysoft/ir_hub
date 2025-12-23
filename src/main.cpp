@@ -3,10 +3,12 @@
 #include "WebServerMgr.h"
 #include "WebSocketMgr.h"
 #include "WiFiMgr.h"
+#include "TcpSocketMgr.h"
 #include "config.h"
 
 ConfigMgr config;
 WiFiMgr wifiMgr;
+TcpSocketMgr tcpSocketMgr;
 WebSocketMgr webSocketMgr;
 IrServer irServer;
 UDPServer udp;
@@ -46,11 +48,13 @@ void setup() {
   config.begin();
   wifiMgr.begin();
   webSocketMgr.begin();
+  tcpSocketMgr.begin();
   irServer.begin();
   udp.begin(UDP_PORT);
   webUI.begin();
   girsClient.begin();
   girsClient.addStream(&Serial);
+  girsClient.addStream(&tcpSocketMgr);
 
 #if defined(ESP8266)
   btSerial.begin(9600);
@@ -78,6 +82,9 @@ void loop() {
   yield();
 
   webSocketMgr.update();
+  yield();
+
+  tcpSocketMgr.update();
   yield();
 
   udp.update();
